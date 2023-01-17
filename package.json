@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@raydium-io/raydium-sdk": "1.1.0-beta.53",
+    "@solana/web3.js": "^1.73.0"
+  }
+}
