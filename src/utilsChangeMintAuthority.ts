@@ -1,3 +1,4 @@
+import { TxVersion } from '@raydium-io/raydium-sdk';
 import {
   AuthorityType,
   createSetAuthorityInstruction,
@@ -14,14 +15,16 @@ import {
 import { sendTx } from './util';
 
 (async () => {
-  const tx = new Transaction()
-  tx.add(createSetAuthorityInstruction(
-    new PublicKey(' mint address '),
-    wallet.publicKey,
-    AuthorityType.FreezeAccount,
-    null, // if will delete , change -> new PublicKey(' new authority address ')
-  ))
-  
-  const txids = await sendTx(connection, wallet, 'LEGACY', [tx])
-  console.log(txids)
-})()
+  const tx = new Transaction();
+  tx.add(
+    createSetAuthorityInstruction(
+      new PublicKey(' mint address '),
+      wallet.publicKey,
+      AuthorityType.FreezeAccount,
+      null // if will delete , change -> new PublicKey(' new authority address ')
+    )
+  );
+
+  const txids = await sendTx(connection, wallet, TxVersion.LEGACY, [tx]);
+  console.log(txids);
+})();

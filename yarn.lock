@@ -29,10 +29,10 @@
   resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.7.1.tgz#b251c70f824ce3ca7f8dc3df08d58f005cc0507c"
   integrity sha512-hOUk6AyBFmqVrv7k5WAw/LpszxVbj9gGN4JRkIX52fdFAj1UA61KXmZDvqVEm+pOyec3+fIeZB02LYa/pWOArw==
 
-"@raydium-io/raydium-sdk@npm:test-r-sdk@1.2.147":
-  version "1.2.147"
-  resolved "https://registry.yarnpkg.com/test-r-sdk/-/test-r-sdk-1.2.147.tgz#b8be429972c837131020db0c937a725d6de67041"
-  integrity sha512-uTPiq29f5KeaaG/1YQEh0PWYoBKCJyzWUIod5F24Eiu4D5bq/i8LHUsX0/tewK8D6VGkAmaLNFUqXMHq/85UCw==
+"@raydium-io/raydium-sdk@npm:test-r-sdk@1.2.159":
+  version "1.2.159"
+  resolved "https://registry.yarnpkg.com/test-r-sdk/-/test-r-sdk-1.2.159.tgz#58300fff02f8f047b02f5b2e1bdb79e0ba518d3f"
+  integrity sha512-ddI/qe6okUEvBZ0ZXuJT9ncHUyemLSjYrYhXx+QpbnRq+E05BGUtl/h8HcJKlV6fBQdg0FRFdA65qK6zyraHXA==
   dependencies:
     "@colors/colors" "^1.5.0"
     "@solana/buffer-layout" "^4.0.1"
