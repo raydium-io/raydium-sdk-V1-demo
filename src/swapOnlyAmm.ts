@@ -1,9 +1,12 @@
 import {
   buildTransaction,
+  jsonInfo2PoolKeys,
+  Liquidity,
+  LiquidityPoolKeys,
+  LiquiditySwapInstructionSimpleParams,
   Percent,
   Token,
   TokenAmount,
-  TradeV2,
 } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
@@ -18,8 +21,14 @@ import {
 } from './util';
 
 async function swapOnlyAmm() {
+  // target pool public key string, in this example, USDC-RAY pool
+  const targetPoolPublicKeyString = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6';
   // get v2 pool list
   const ammV2Pool = await (await fetch('https://api.raydium.io/v2/sdk/liquidity/mainnet.json')).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  // get target pool
+  const targetPoolInfo = [...ammV2Pool.official, ...ammV2Pool.unOfficial].filter(
+    (info) => info.id === targetPoolPublicKeyString
+  )[0];
 
   // coin info
   const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY');
@@ -30,53 +39,37 @@ async function swapOnlyAmm() {
     'USDC'
   );
 
-  // get all route info without v3 list empty
-  const getRoute = TradeV2.getAllRoute({
-    inputMint: RAYToken.mint,
-    outputMint: USDCToken.mint,
-    apiPoolList: ammV2Pool,
-    ammV3List: [], // leave this empty array, we don't need this when swapping only amm pools
-  });
-
-  // get the information you need for the calculation
-  const poolInfosCache = await TradeV2.fetchMultipleInfo({
-    connection,
-    pools: getRoute.needSimulate,
-    batchRequest: true,
-  });
-
   // Configure input/output parameters, in this example, this token amount will swap 0.0001 USDC to RAY
   const inputTokenAmount = new TokenAmount(USDCToken, 100);
   const outputToken = RAYToken;
   const slippage = new Percent(1, 100);
 
-  // calculation result of all route
-  const routeList = TradeV2.getAllRouteComputeAmountOut({
-    directPath: getRoute.directPath,
-    routePathDict: getRoute.routePathDict,
-    simulateCache: poolInfosCache,
-    tickCache: {}, // leave this empty object, we don't need this when swapping only amm pools
+  const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys;
 
-    inputTokenAmount,
-    outputToken,
+  const { amountOut } = Liquidity.computeAmountOut({
+    poolKeys: poolKeys,
+    poolInfo: await Liquidity.fetchInfo({ connection, poolKeys }),
+    amountIn: inputTokenAmount,
+    currencyOut: outputToken,
     slippage,
-    chainTime: new Date().getTime() / 1000, // this chain time
   });
 
-  // get user all account
-  const walletTokenAccountFormet = await getWalletTokenAccount(connection, wallet.publicKey);
+  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
 
-  // make swap transaction
-  const innerTx = await TradeV2.makeSwapInstructionSimple({
+  // prepare swap instruction parameters
+  const instructionParams: LiquiditySwapInstructionSimpleParams = {
     connection,
-    swapInfo: routeList[0],
-    ownerInfo: {
-      wallet: wallet.publicKey,
-      tokenAccounts: walletTokenAccountFormet,
-      associatedOnly: true,
+    poolKeys,
+    userKeys: {
+      tokenAccounts: walletTokenAccountFormat,
+      owner: wallet.publicKey,
     },
-    checkTransaction: true,
-  });
+    amountIn: inputTokenAmount,
+    amountOut,
+    fixedSide: 'in',
+  };
+
+  const innerTx = await Liquidity.makeSwapInstructionSimple(instructionParams);
 
   const transactions = await buildTransaction({
     connection,
