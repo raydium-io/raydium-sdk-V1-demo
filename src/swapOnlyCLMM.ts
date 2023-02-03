@@ -82,8 +82,8 @@ async function swapOnlyCLMM() {
       tokenAccounts: walletTokenAccountFormat,
     },
     inputMint: inputToken.mint,
-    amountIn: inputTokenAmount,
-    amountOutMin: minAmountOut,
+    amountIn: inputTokenAmount.raw,
+    amountOutMin: minAmountOut.raw,
     remainingAccounts,
   });
 
