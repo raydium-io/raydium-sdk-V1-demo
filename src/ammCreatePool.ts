@@ -11,7 +11,7 @@ import {
 } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import { connection, wallet, wantBuildTxVersion } from '../config';
+import { connection, RAYDIUM_LIQUIDITY_POOL_V4_PROGRAM_ID, wallet, wantBuildTxVersion } from '../config';
 import { getWalletTokenAccount } from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
@@ -68,7 +68,7 @@ async function ammCreatePool() {
     baseDecimals: baseToken.decimals,
     quoteDecimals: quoteToken.decimals,
     marketId: new PublicKey(address.marketId),
-    programId: new PublicKey('675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'),
+    programId: new PublicKey(RAYDIUM_LIQUIDITY_POOL_V4_PROGRAM_ID),
     marketProgramId: new PublicKey(openBookProgramId),
   });
 
