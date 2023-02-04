@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@raydium-io/raydium-sdk": "npm:test-r-sdk@1.2.159",
-    "@solana/web3.js": "^1.73.0"
+    "@solana/web3.js": "^1.73.0",
+    "bs58": "^5.0.0",
+    "decimal.js": "^10.4.3"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1"
