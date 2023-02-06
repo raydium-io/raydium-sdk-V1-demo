@@ -1,10 +1,20 @@
 import BN from 'bn.js';
 import Decimal from 'decimal.js';
 
-import { AmmV3, AmmV3ConfigInfo, buildTransaction, Token } from '@raydium-io/raydium-sdk';
+import {
+  AmmV3,
+  AmmV3ConfigInfo,
+  buildTransaction,
+  Token,
+} from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import { connection, RAYDIUM_AMM_V3_PROGRAM_ID, wallet, wantBuildTxVersion } from '../config';
+import {
+  connection,
+  RAYDIUM_AMM_V3_PROGRAM_ID,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
 import { getWalletTokenAccount } from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
@@ -13,7 +23,9 @@ async function ammV3CreatePool() {
   const ammConfigs = (await (await fetch('https://api.raydium.io/v2/ammV3/ammConfigs')).json()) as {
     data: Record<string, AmmV3ConfigInfo>;
   };
-  const ammConfig = ammConfigs.data['E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'];
+  let ammConfig = ammConfigs.data['E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'] as AmmV3ConfigInfo;
+  ammConfig = { ...ammConfig, id: new PublicKey(ammConfig.id) };
+
   // coin info
   const baseToken = new Token(
     new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
