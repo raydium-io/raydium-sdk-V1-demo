@@ -1,4 +1,5 @@
 import assert from 'assert';
+import BN from 'bn.js';
 
 import {
   AmmV3,
@@ -13,9 +14,10 @@ import {
   wallet,
   wantBuildTxVersion,
 } from '../config';
-import { getWalletTokenAccount } from './util';
-
-// THIS DEMO HAS NOT BEEN TESTING YET!!!!!
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 async function ammV3RemovePosition() {
   // target pool id, in this example, USDC-RAY pool
@@ -63,9 +65,10 @@ async function ammV3RemovePosition() {
       feePayer: wallet.publicKey,
       wallet: wallet.publicKey,
       tokenAccounts: walletTokenAccountFormat,
-      closePosition: true, // for close position, set true
+      // closePosition: true, // for close
     },
-    liquidity: ammV3Position.liquidity, //for close position, use 'ammV3Position.liquidity' without dividend
+    liquidity: ammV3Position.liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
+    // slippage: 1, // if encouter slippage check error, try uncomment this line and set a number manually
   });
 
   const makeDecreaseLiquidityTransactions = await buildTransaction({
@@ -75,12 +78,8 @@ async function ammV3RemovePosition() {
     innerTransactions: makeDecreaseLiquidityInstruction.innerTransactions,
   });
 
-  console.log(
-    await Promise.all(
-      makeDecreaseLiquidityTransactions.map(async (i) => await connection.simulateTransaction(i))
-    )
-  );
-  return;
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeDecreaseLiquidityTransactions);
+  console.log(txids);
 }
 
 ammV3RemovePosition();
