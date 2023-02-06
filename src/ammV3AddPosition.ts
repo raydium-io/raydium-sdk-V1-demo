@@ -37,7 +37,6 @@ async function ammV3AddPosition() {
       },
     })
   ).forEach((i) => {
-    console.log('pool info: ', i);
     ammV3PoolInfoList.push(i.state);
     if (i.positionAccount) {
       ammV3PersonalPositionList = i.positionAccount;
