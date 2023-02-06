@@ -11,8 +11,15 @@ import {
 } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import { connection, wallet, wantBuildTxVersion } from '../config';
-import { getWalletTokenAccount, sendTx } from './util';
+import {
+  connection,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 async function ammAddLiquidity() {
   // target pool public key string, in this example, USDC-RAY pool
