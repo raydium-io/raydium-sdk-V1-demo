@@ -72,6 +72,7 @@ async function ammV3CreatePool() {
     ammConfig,
     createPoolInstructionSimpleAddress: { ...makeCreatePoolInstruction.address },
     owner: wallet.publicKey,
+    initialPrice: new Decimal(1),
   });
 
   const { tick: tickLower } = AmmV3.getPriceAndTick({
