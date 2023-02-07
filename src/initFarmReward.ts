@@ -3,6 +3,7 @@ import assert from 'assert';
 import {
   ApiFarmInfo,
   ENDPOINT,
+  jsonInfo2PoolKeys,
 } from '@raydium-io/raydium-sdk';
 
 import { RAYDIUM_MAINNET_API } from '../config';
@@ -13,18 +14,20 @@ async function initFarmReward() {
   // target farm public key string, in this example, USDC-PEPE farm
   const targetFarmPublicKeyString = 'BuK4gB4fK8D6Fv3WYh6hefv9D3a6NKvASdWstwfbth5i';
 
+  // get farm pool list
   const farmPool: ApiFarmInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.farmInfo)).json();
   assert(farmPool, 'farm pool is undefined');
 
-  let targetFarmJsonInfo = farmPool.ecosystem.find((pool) => pool.id === targetFarmPublicKeyString);
+  let targetFarmJsonInfo: any = farmPool.ecosystem.find((pool) => pool.id === targetFarmPublicKeyString);
   assert(targetFarmJsonInfo, 'target farm not found');
-  console.log('targetFarmJsonInfo: ', targetFarmJsonInfo);
 
+  // parse farm pool json info to to fit FarmPoolKeys type
   const symbol = targetFarmJsonInfo.symbol;
+  delete targetFarmJsonInfo.symbol;
+  let targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo);
+  targetFarmInfo['symbol'] = symbol;
 
-  // TODO: below jsonInfo2PoolKeys func will be failed, because targetFarmJsonInfo.symbol is not a public key
-  // const targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo);
-
+  // developing by Rudy🎉
   // const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
 
   // const makeRestartFarmInstruction = await Farm.makeRestartFarmInstructionSimple({

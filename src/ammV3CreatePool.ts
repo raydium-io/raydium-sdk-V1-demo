@@ -5,6 +5,7 @@ import {
   AmmV3,
   AmmV3ConfigInfo,
   buildTransaction,
+  ENDPOINT,
   Token,
 } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
@@ -12,6 +13,7 @@ import { PublicKey } from '@solana/web3.js';
 import {
   connection,
   RAYDIUM_AMM_V3_PROGRAM_ID,
+  RAYDIUM_MAINNET_API,
   wallet,
   wantBuildTxVersion,
 } from '../config';
@@ -20,9 +22,12 @@ import { getWalletTokenAccount } from './util';
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
 
 async function ammV3CreatePool() {
-  const ammConfigs = (await (await fetch('https://api.raydium.io/v2/ammV3/ammConfigs')).json()) as {
+  // fetch amm config list
+  const ammConfigs = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Configs)).json()) as {
     data: Record<string, AmmV3ConfigInfo>;
   };
+
+  // get config, in this example,
   let ammConfig = ammConfigs.data['E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'] as AmmV3ConfigInfo;
   ammConfig = { ...ammConfig, id: new PublicKey(ammConfig.id) };
 
@@ -41,8 +46,11 @@ async function ammV3CreatePool() {
   );
 
   const programId = new PublicKey(RAYDIUM_AMM_V3_PROGRAM_ID);
+
+  // get wallet token accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
 
+  // prepare instruction
   const makeCreatePoolInstruction = await AmmV3.makeCreatePoolInstructionSimple({
     connection,
     programId,
@@ -59,6 +67,7 @@ async function ammV3CreatePool() {
     initialPrice: new Decimal(1),
   });
 
+  // prepare mock pool info
   const mockPoolInfo = AmmV3.makeMockPoolInfo({
     programId,
     mint1: {
@@ -75,6 +84,7 @@ async function ammV3CreatePool() {
     initialPrice: new Decimal(1),
   });
 
+  // get closest tick w/ prefer price range
   const { tick: tickLower } = AmmV3.getPriceAndTick({
     poolInfo: mockPoolInfo,
     baseIn: true,
@@ -86,6 +96,7 @@ async function ammV3CreatePool() {
     price: new Decimal(1.5),
   });
 
+  // prepare instruction
   const makeOpenPositionInstruction = await AmmV3.makeOpenPositionInstructionSimple({
     connection,
     poolInfo: mockPoolInfo,
@@ -100,6 +111,7 @@ async function ammV3CreatePool() {
     slippage: 1,
   });
 
+  // prepare transactions
   const createPooltransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
@@ -107,6 +119,7 @@ async function ammV3CreatePool() {
     innerTransactions: makeCreatePoolInstruction.innerTransactions,
   });
 
+  // prepare transactions
   const openPoolPositiontransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
@@ -114,6 +127,7 @@ async function ammV3CreatePool() {
     innerTransactions: makeOpenPositionInstruction.innerTransactions,
   });
 
+  // simulate transactions
   console.log(
     await Promise.all(createPooltransactions.map(async (i) => await connection.simulateTransaction(i)))
   );

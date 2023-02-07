@@ -4,6 +4,7 @@ import BN from 'bn.js';
 import {
   buildTransaction,
   Liquidity,
+  MAINNET_PROGRAM_ID,
   MarketV2,
   SPL_MINT_LAYOUT,
   Token,
@@ -11,14 +12,17 @@ import {
 } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import { connection, RAYDIUM_LIQUIDITY_POOL_V4_PROGRAM_ID, wallet, wantBuildTxVersion } from '../config';
+import {
+  connection,
+  RAYDIUM_LIQUIDITY_POOL_V4_PROGRAM_ID,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
 import { getWalletTokenAccount } from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
 
 async function ammCreatePool() {
-  const openBookProgramId = 'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX';
-
   // coin info
   const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY');
   const USDCToken = new Token(
@@ -31,6 +35,7 @@ async function ammCreatePool() {
   const baseToken = RAYToken;
   const quoteToken = USDCToken;
 
+  // prepare instruction
   const { address, innerTransactions } = await MarketV2.makeCreateMarketInstructionSimple({
     connection,
     wallet: wallet.publicKey,
@@ -44,11 +49,10 @@ async function ammCreatePool() {
     },
     lotSize: 1,
     tickSize: 0.01,
-    dexProgramId: new PublicKey(openBookProgramId),
+    dexProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
   });
 
-  console.log('marketId: ', address.marketId);
-
+  // prepare transactions
   const createMarketIdTransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
@@ -56,10 +60,12 @@ async function ammCreatePool() {
     innerTransactions: innerTransactions,
   });
 
+  // simulate transactions
   console.log(
     await Promise.all(createMarketIdTransactions.map(async (i) => await connection.simulateTransaction(i)))
   );
 
+  // get associated pool keys
   const associatedPoolKeys = await Liquidity.getAssociatedPoolKeys({
     version: 4,
     marketVersion: 3,
@@ -69,11 +75,12 @@ async function ammCreatePool() {
     quoteDecimals: quoteToken.decimals,
     marketId: new PublicKey(address.marketId),
     programId: new PublicKey(RAYDIUM_LIQUIDITY_POOL_V4_PROGRAM_ID),
-    marketProgramId: new PublicKey(openBookProgramId),
+    marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
   });
 
   const { id: ammId, lpMint } = associatedPoolKeys;
 
+  // check whether pool has been created or inited
   const lpMintInfoOnChain = (await connection?.getAccountInfo(new PublicKey(lpMint)))?.data;
   const ammInfoOnChain = (await connection?.getAccountInfo(new PublicKey(ammId)))?.data;
 
@@ -87,8 +94,10 @@ async function ammCreatePool() {
   assert(!isAlreadyCreated, 'pool has not been created, yet');
   assert(!isAlreadyInited, 'pool already inited');
 
+  // get wallet token accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
 
+  // prepare instruction
   const initPoolInstructionResponse = await Liquidity.makeInitPoolInstructionSimple({
     poolKeys: associatedPoolKeys,
     startTime: undefined,
@@ -98,6 +107,7 @@ async function ammCreatePool() {
     userKeys: { owner: wallet.publicKey, payer: wallet.publicKey, tokenAccounts: walletTokenAccountFormat },
   });
 
+  // prepare transactions
   const initPoolInstructionTransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
@@ -105,6 +115,7 @@ async function ammCreatePool() {
     innerTransactions: initPoolInstructionResponse.innerTransactions,
   });
 
+  // simulate transactions
   console.log(
     await Promise.all(
       initPoolInstructionTransactions.map(async (i) => await connection.simulateTransaction(i))

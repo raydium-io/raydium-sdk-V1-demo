@@ -5,10 +5,12 @@ import {
   AmmV3PoolInfo,
   AmmV3PoolPersonalPosition,
   ApiAmmV3PoolsItem,
+  ENDPOINT,
 } from '@raydium-io/raydium-sdk';
 
 import {
   connection,
+  RAYDIUM_MAINNET_API,
   wallet,
 } from '../config';
 import { getWalletTokenAccount } from './util';
@@ -19,7 +21,7 @@ async function ammV3OwnerPositionInfo() {
   // wallet accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
   // get all pool info from api
-  const ammV3Pool = (await (await fetch('https://api.raydium.io/v2/ammV3/ammPools')).json()).data.filter(
+  const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data.filter(
     (pool: ApiAmmV3PoolsItem) => pool.id === targetPoolId
   );
 
