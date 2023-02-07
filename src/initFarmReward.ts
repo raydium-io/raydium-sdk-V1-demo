@@ -11,12 +11,12 @@ import { RAYDIUM_MAINNET_API } from '../config';
 
 async function initFarmReward() {
   // target farm public key string, in this example, USDC-PEPE farm
-  const targetFarmlPublicKeyString = 'BuK4gB4fK8D6Fv3WYh6hefv9D3a6NKvASdWstwfbth5i';
+  const targetFarmPublicKeyString = 'BuK4gB4fK8D6Fv3WYh6hefv9D3a6NKvASdWstwfbth5i';
 
   const farmPool: ApiFarmInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.farmInfo)).json();
   assert(farmPool, 'farm pool is undefined');
 
-  let targetFarmJsonInfo = farmPool.ecosystem.find((pool) => pool.id === targetFarmlPublicKeyString);
+  let targetFarmJsonInfo = farmPool.ecosystem.find((pool) => pool.id === targetFarmPublicKeyString);
   assert(targetFarmJsonInfo, 'target farm not found');
   console.log('targetFarmJsonInfo: ', targetFarmJsonInfo);
 
