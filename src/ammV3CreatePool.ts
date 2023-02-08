@@ -1,22 +1,10 @@
 import BN from 'bn.js';
 import Decimal from 'decimal.js';
 
-import {
-  AmmV3,
-  AmmV3ConfigInfo,
-  buildTransaction,
-  ENDPOINT,
-  Token,
-} from '@raydium-io/raydium-sdk';
+import { AmmV3, AmmV3ConfigInfo, buildTransaction, ENDPOINT, Token } from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import {
-  connection,
-  RAYDIUM_AMM_V3_PROGRAM_ID,
-  RAYDIUM_MAINNET_API,
-  wallet,
-  wantBuildTxVersion,
-} from '../config';
+import { connection, PROGRAMIDS, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config';
 import { getWalletTokenAccount } from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
@@ -45,7 +33,7 @@ async function ammV3CreatePool() {
     'RAY'
   );
 
-  const programId = new PublicKey(RAYDIUM_AMM_V3_PROGRAM_ID);
+  const programId = PROGRAMIDS.CLMM;
 
   // get wallet token accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
