@@ -14,7 +14,6 @@ import { getWalletTokenAccount, sendTx } from './util'
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
-  lpToken: Token
   removeLpTokenAmount: TokenAmount
   targetPool: string
   walletTokenAccounts: WalletTokenAccounts
@@ -69,7 +68,6 @@ async function howToUse() {
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   ammRemoveLiquidity({
-    lpToken,
     removeLpTokenAmount,
     targetPool,
     walletTokenAccounts,

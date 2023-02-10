@@ -18,7 +18,6 @@ type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
   targetFarm: string
   inputTokenAmount: TokenAmount
-  slippage: Percent
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
 }
@@ -75,13 +74,11 @@ async function howToUse() {
   const targetFarm = 'CHYrUBX2RKX8iBg7gYTkccoGNBzP44LdaazMHCLcdEgS' // RAY-USDC farm
   const lpToken = new Token(new PublicKey('FbC6K13MzHvN42bXrtGaWsvZY9fxrackRSZcBGfjPc7m'), 6, 'RAY-USDC', 'RAY-USDC')
   const inputTokenAmount = new TokenAmount(lpToken, 100)
-  const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   unstakeFarm({
     targetFarm,
     inputTokenAmount,
-    slippage,
     walletTokenAccounts,
     wallet: wallet,
   }).then(({ txids }) => {

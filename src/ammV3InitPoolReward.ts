@@ -4,13 +4,9 @@ import {
   AmmV3,
   ApiAmmV3PoolsItem,
   buildTransaction,
-  ENDPOINT,
-  Percent,
-  Token,
-  TokenAmount,
+  ENDPOINT, Token
 } from '@raydium-io/raydium-sdk'
 import { Keypair, PublicKey } from '@solana/web3.js'
-
 import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
 import { getWalletTokenAccount, sendTx } from './util'
 

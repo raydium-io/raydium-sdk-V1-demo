@@ -20,7 +20,6 @@ type TestTxInputInfo = {
   quoteToken: Token
   targetPool: string
   inputTokenAmount: TokenAmount
-  slippage: Percent
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
   userCursorSide: 'base' | 'quote'
@@ -101,7 +100,6 @@ async function howToUse() {
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
   const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
   const inputTokenAmount = new TokenAmount(RAYToken, 10000)
-  const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const userCursorSide: 'base' | 'quote' = 'base'
 
@@ -110,7 +108,6 @@ async function howToUse() {
     quoteToken,
     targetPool,
     inputTokenAmount,
-    slippage,
     walletTokenAccounts,
     wallet: wallet,
     userCursorSide,

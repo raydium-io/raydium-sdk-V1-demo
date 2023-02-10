@@ -3,10 +3,7 @@ import {
   ENDPOINT,
   Farm,
   LiquidityPoolJsonInfo,
-  MAINNET_PROGRAM_ID,
-  Percent,
-  Token,
-  TokenAmount,
+  MAINNET_PROGRAM_ID, Token
 } from '@raydium-io/raydium-sdk'
 import { Keypair, PublicKey } from '@solana/web3.js'
 import assert from 'assert'
@@ -15,11 +12,7 @@ import { getWalletTokenAccount, sendTx } from './util'
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
-  baseToken: Token
-  quoteToken: Token
   targetPool: string
-  inputTokenAmount: TokenAmount
-  slippage: Percent
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
   rewardInfos: {
@@ -86,12 +79,8 @@ async function createFarm(input: TestTxInputInfo) {
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
   const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
-  const inputTokenAmount = new TokenAmount(RAYToken, 10000)
-  const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const rewardInfos = [
     {
@@ -107,11 +96,7 @@ async function howToUse() {
   }
 
   createFarm({
-    baseToken,
-    quoteToken,
     targetPool,
-    inputTokenAmount,
-    slippage,
     walletTokenAccounts,
     wallet: wallet,
     rewardInfos,
