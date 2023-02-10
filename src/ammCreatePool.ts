@@ -12,8 +12,8 @@ type CalcStartPrice = {
   addQuoteAmount: BN
 }
 
-function calcMarketStartPrice(calcInfo: CalcStartPrice) {
-  return calcInfo.addBaseAmount.toNumber() / 10 ** 6 / (calcInfo.addQuoteAmount.toNumber() / 10 ** 6)
+function calcMarketStartPrice(input: CalcStartPrice) {
+  return input.addBaseAmount.toNumber() / 10 ** 6 / (input.addQuoteAmount.toNumber() / 10 ** 6)
 }
 
 type LiquidityPairTargetInfo = {
@@ -22,23 +22,26 @@ type LiquidityPairTargetInfo = {
   targetMargetId: PublicKey
 }
 
-function getMarketAssociatedPoolKeys(inputInfo: LiquidityPairTargetInfo) {
+function getMarketAssociatedPoolKeys(input: LiquidityPairTargetInfo) {
   return Liquidity.getAssociatedPoolKeys({
     version: 4,
     marketVersion: 3,
-    baseMint: inputInfo.baseToken.mint,
-    quoteMint: inputInfo.quoteToken.mint,
-    baseDecimals: inputInfo.baseToken.decimals,
-    quoteDecimals: inputInfo.quoteToken.decimals,
-    marketId: inputInfo.targetMargetId,
+    baseMint: input.baseToken.mint,
+    quoteMint: input.quoteToken.mint,
+    baseDecimals: input.baseToken.decimals,
+    quoteDecimals: input.quoteToken.decimals,
+    marketId: input.targetMargetId,
     programId: PROGRAMIDS.AmmV4,
     marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
   })
 }
 
-type TestInputInfo = LiquidityPairTargetInfo &
+type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
+type TestTxInputInfo = LiquidityPairTargetInfo &
   CalcStartPrice & {
     startTime: number // seconds
+    walletTokenAccounts: WalletTokenAccounts
+    wallet: Keypair
   }
 
 /**
@@ -47,25 +50,24 @@ type TestInputInfo = LiquidityPairTargetInfo &
  * step 2: compose instructions to several transactions
  * step 3: send transactions
  */
-async function ammCreatePool(inputInfo: TestInputInfo): Promise<{ txids: string[] }> {
+async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] }> {
   // -------- step 1: make instructions --------
-  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey)
   const initPoolInstructionResponse = await Liquidity.makeCreatePoolV4InstructionV2Simple({
     connection,
     programId: PROGRAMIDS.AmmV4,
     marketInfo: {
-      marketId: inputInfo.targetMargetId,
+      marketId: input.targetMargetId,
       programId: PROGRAMIDS.OPENBOOK_MARKET,
     },
-    baseMintInfo: inputInfo.baseToken,
-    quoteMintInfo: inputInfo.quoteToken,
-    baseAmount: inputInfo.addBaseAmount,
-    quoteAmount: inputInfo.addQuoteAmount,
-    startTime: new BN(Math.floor(inputInfo.startTime)),
+    baseMintInfo: input.baseToken,
+    quoteMintInfo: input.quoteToken,
+    baseAmount: input.addBaseAmount,
+    quoteAmount: input.addQuoteAmount,
+    startTime: new BN(Math.floor(input.startTime)),
     ownerInfo: {
-      feePayer: wallet.publicKey,
-      wallet: wallet.publicKey,
-      tokenAccounts: walletTokenAccountFormat,
+      feePayer: input.wallet.publicKey,
+      wallet: input.wallet.publicKey,
+      tokenAccounts: input.walletTokenAccounts,
       useSOLBalance: true,
     },
     associatedOnly: false,
@@ -75,23 +77,23 @@ async function ammCreatePool(inputInfo: TestInputInfo): Promise<{ txids: string[
   const createPoolTxs = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
+    payer: input.wallet.publicKey,
     innerTransactions: initPoolInstructionResponse.innerTransactions,
   })
 
   // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, createPoolTxs)
-
+  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, createPoolTxs)
   return { txids }
 }
 
-function howToUse() {
+async function howToUse() {
   const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
   const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
   const targetMargetId = Keypair.generate().publicKey
   const addBaseAmount = new BN(10000) // 10000 / 10 ** 6,
   const addQuoteAmount = new BN(10000) // 10000 / 10 ** 6,
   const startTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // start from 7 days later
+  const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   /* do something with start price if needed */
   const startPrice = calcMarketStartPrice({ addBaseAmount, addQuoteAmount })
@@ -103,10 +105,17 @@ function howToUse() {
     targetMargetId,
   })
 
-  ammCreatePool({ startTime, addBaseAmount, addQuoteAmount, baseToken, quoteToken, targetMargetId }).then(
-    ({ txids }) => {
-      /** continue with txids */
-      console.log('txids', txids)
-    }
-  )
+  ammCreatePool({
+    startTime,
+    addBaseAmount,
+    addQuoteAmount,
+    baseToken,
+    quoteToken,
+    targetMargetId,
+    wallet,
+    walletTokenAccounts,
+  }).then(({ txids }) => {
+    /** continue with txids */
+    console.log('txids', txids)
+  })
 }

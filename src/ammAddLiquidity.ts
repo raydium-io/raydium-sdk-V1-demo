@@ -10,23 +10,24 @@ import {
   Token,
   TokenAmount,
 } from '@raydium-io/raydium-sdk'
-import { PublicKey } from '@solana/web3.js'
+import { Keypair, PublicKey } from '@solana/web3.js'
 import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
 import { getWalletTokenAccount, sendTx } from './util'
 
-type TestInputInfo = {
+type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
+type TestTxInputInfo = {
   baseToken: Token
   quoteToken: Token
   targetPool: string
   inputTokenAmount: TokenAmount
   slippage: Percent
+  walletTokenAccounts: WalletTokenAccounts
+  wallet: Keypair
 }
-
-const fetchAmmV2PoolData = () => fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).then((res) => res.json())
 
 /**
  *
- * pre-action: prepare basic info
+ * pre-action: fetch basic AmmV2 info
  *
  * step 1: compute (max) another amount
  * step 2: create instructions by SDK function
@@ -34,15 +35,15 @@ const fetchAmmV2PoolData = () => fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).
  * step 4: send transactions
  */
 async function ammAddLiquidity(
-  inputInfo: TestInputInfo
+  input: TestTxInputInfo
 ): Promise<{ txids: string[]; anotherAmount: TokenAmount | CurrencyAmount }> {
-  // -------- pre-action: prepare basic info --------
-  const ammV2PoolData = await fetchAmmV2PoolData()
+  // -------- pre-action: fetch basic info --------
+  const ammV2PoolData = await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).then((res) => res.json())
   assert(ammV2PoolData, 'fetch failed')
   const targetPoolInfo = [...ammV2PoolData.official, ...ammV2PoolData.unOfficial].find(
-    (poolInfo) => poolInfo.id === inputInfo.targetPool
+    (poolInfo) => poolInfo.id === input.targetPool
   )
-  assert(targetPoolInfo, 'cannot find the target pool') // may be undefined if the Liquidity pool is not required for routing.
+  assert(targetPoolInfo, 'cannot find the target pool')
 
   // -------- step 1: compute another amount --------
   const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys
@@ -50,18 +51,21 @@ async function ammAddLiquidity(
   const { maxAnotherAmount, anotherAmount } = Liquidity.computeAnotherAmount({
     poolKeys,
     poolInfo: { ...targetPoolInfo, ...extraPoolInfo },
-    amount: inputInfo.inputTokenAmount,
-    anotherCurrency: inputInfo.quoteToken,
-    slippage: inputInfo.slippage,
+    amount: input.inputTokenAmount,
+    anotherCurrency: input.quoteToken,
+    slippage: input.slippage,
   })
 
   // -------- step 2: make instructions --------
-  const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const addLiquidityInstructionResponse = await Liquidity.makeAddLiquidityInstructionSimple({
     connection,
     poolKeys,
-    userKeys: { owner: wallet.publicKey, payer: wallet.publicKey, tokenAccounts: walletTokenAccounts },
-    amountInA: inputInfo.inputTokenAmount,
+    userKeys: {
+      owner: input.wallet.publicKey,
+      payer: input.wallet.publicKey,
+      tokenAccounts: input.walletTokenAccounts,
+    },
+    amountInA: input.inputTokenAmount,
     amountInB: maxAnotherAmount,
     fixedSide: 'a',
   })
@@ -70,27 +74,33 @@ async function ammAddLiquidity(
   const addLiquidityInstructionTransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
+    payer: input.wallet.publicKey,
     innerTransactions: addLiquidityInstructionResponse.innerTransactions,
   })
 
   // -------- step 4: send transactions --------
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, addLiquidityInstructionTransactions)
-
+  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, addLiquidityInstructionTransactions)
   return { txids, anotherAmount }
 }
 
-function howToUse() {
+async function howToUse() {
   const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
   const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
   const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
   const inputTokenAmount = new TokenAmount(baseToken, 100)
   const slippage = new Percent(1, 100)
+  const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
-  ammAddLiquidity({ baseToken, quoteToken, targetPool, inputTokenAmount, slippage }).then(
-    ({ txids, anotherAmount }) => {
-      /** continue with txids */
-      console.log('txids', txids)
-    }
-  )
+  ammAddLiquidity({
+    baseToken,
+    quoteToken,
+    targetPool,
+    inputTokenAmount,
+    slippage,
+    walletTokenAccounts,
+    wallet: wallet,
+  }).then(({ txids, anotherAmount }) => {
+    /** continue with txids */
+    console.log('txids', txids)
+  })
 }
