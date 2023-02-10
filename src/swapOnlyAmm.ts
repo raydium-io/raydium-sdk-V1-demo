@@ -1,91 +1,92 @@
-import assert from 'assert';
-
 import {
   buildTransaction,
   jsonInfo2PoolKeys,
   Liquidity,
-  LiquidityPoolKeys,
-  LiquiditySwapInstructionSimpleParams,
-  Percent,
+  LiquidityPoolKeys, Percent,
   Token,
-  TokenAmount,
-} from '@raydium-io/raydium-sdk';
-import { PublicKey } from '@solana/web3.js';
+  TokenAmount
+} from '@raydium-io/raydium-sdk'
+import { Keypair, PublicKey } from '@solana/web3.js'
+import assert from 'assert'
+import { connection, ENDPOINT, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
+import { getWalletTokenAccount, sendTx } from './util'
 
-import {
-  connection,
-  ENDPOINT,
-  RAYDIUM_MAINNET_API,
-  wallet,
-  wantBuildTxVersion,
-} from '../config';
-import {
-  getWalletTokenAccount,
-  sendTx,
-} from './util';
+type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
+type TestTxInputInfo = {
+  outputToken: Token
+  targetPool: string
+  inputTokenAmount: TokenAmount
+  slippage: Percent
+  walletTokenAccounts: WalletTokenAccounts
+  wallet: Keypair
+}
 
-async function swapOnlyAmm() {
-  // target pool public key string, in this example, USDC-RAY pool
-  const targetPoolPublicKeyString = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6';
-  // get pool list
-  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
-  // get target pool
-  const targetPoolInfo = [...ammPool.official, ...ammPool.unOfficial].find(
-    (info) => info.id === targetPoolPublicKeyString
-  );
+/**
+ * pre-action: get pool info
+ * step 1: coumpute amount out
+ * step 2: create instructions by SDK function
+ * step 3: compose instructions to several transactions
+ * step 4: send transactions
+ */
+async function swapOnlyAmm(input: TestTxInputInfo) {
+  // -------- pre-action: get pool info --------
+  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  const targetPoolInfo = [...ammPool.official, ...ammPool.unOfficial].find((info) => info.id === input.targetPool)
+  assert(targetPoolInfo, 'cannot find the target pool')
+  const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys
 
-  assert(targetPoolInfo, 'cannot find the target pool');
-
-  // coin info
-  const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY');
-  const USDCToken = new Token(
-    new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-    6,
-    'USDC',
-    'USDC'
-  );
-
-  // Configure input/output parameters, in this example, this token amount will swap 0.0001 USDC to RAY
-  const inputTokenAmount = new TokenAmount(USDCToken, 100);
-  const outputToken = RAYToken;
-  const slippage = new Percent(1, 100);
-
-  const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys;
-
+  // -------- step 1: coumpute amount out --------
   const { amountOut } = Liquidity.computeAmountOut({
     poolKeys: poolKeys,
     poolInfo: await Liquidity.fetchInfo({ connection, poolKeys }),
-    amountIn: inputTokenAmount,
-    currencyOut: outputToken,
-    slippage,
-  });
+    amountIn: input.inputTokenAmount,
+    currencyOut: input.outputToken,
+    slippage: input.slippage,
+  })
 
-  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
-
-  // prepare swap instruction parameters
-  const instructionParams: LiquiditySwapInstructionSimpleParams = {
+  // -------- step 2: create instructions by SDK function --------
+  const { innerTransactions } = await Liquidity.makeSwapInstructionSimple({
     connection,
     poolKeys,
     userKeys: {
-      tokenAccounts: walletTokenAccountFormat,
-      owner: wallet.publicKey,
+      tokenAccounts: input.walletTokenAccounts,
+      owner: input.wallet.publicKey,
     },
-    amountIn: inputTokenAmount,
+    amountIn: input.inputTokenAmount,
     amountOut,
     fixedSide: 'in',
-  };
+  })
 
-  const innerTx = await Liquidity.makeSwapInstructionSimple(instructionParams);
-
+  // -------- step 3: compose instructions to several transactions --------
   const transactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
-    innerTransactions: innerTx.innerTransactions,
-  });
+    payer: input.wallet.publicKey,
+    innerTransactions: innerTransactions,
+  })
 
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, transactions);
-  console.log(txids);
+  // -------- step 4: send transactions --------
+  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
+  return { txids }
 }
 
-swapOnlyAmm();
+async function howToUse() {
+  const inputToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
+  const outputToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // USDC-RAY pool
+  const inputTokenAmount = new TokenAmount(inputToken, 10000)
+  const slippage = new Percent(1, 100)
+  const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
+
+  swapOnlyAmm({
+    outputToken,
+    targetPool,
+    inputTokenAmount,
+    slippage,
+    walletTokenAccounts,
+    wallet: wallet,
+  }).then(({ txids }) => {
+    /** continue with txids */
+    console.log('txids', txids)
+  })
+}
