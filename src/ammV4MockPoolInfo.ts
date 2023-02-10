@@ -1,5 +1,5 @@
-import { Liquidity } from '@raydium-io/raydium-sdk';
-import { PublicKey } from '@solana/web3.js';
+import { Liquidity } from '@raydium-io/raydium-sdk'
+import { PublicKey } from '@solana/web3.js'
 
 async function generateV4PoolInfo() {
   // RAY-USDC
@@ -16,6 +16,11 @@ async function generateV4PoolInfo() {
     marketProgramId: new PublicKey('srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX'),
   })
 
-  console.log(poolInfo)
+  return { poolInfo }
 }
-generateV4PoolInfo()
+
+async function howToUse() {
+  generateV4PoolInfo().then(({ poolInfo }) => {
+    console.log('poolInfo: ', poolInfo)
+  })
+}
