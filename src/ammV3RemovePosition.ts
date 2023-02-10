@@ -1,71 +1,91 @@
-import BN from 'bn.js';
+import BN from 'bn.js'
+import assert from 'assert'
 
 import {
   AmmV3,
   ApiAmmV3PoolsItem,
   buildTransaction,
   ENDPOINT,
-} from '@raydium-io/raydium-sdk';
+  Percent,
+  Token,
+  TokenAmount,
+} from '@raydium-io/raydium-sdk'
 
-import {
-  connection,
-  RAYDIUM_MAINNET_API,
-  wallet,
-  wantBuildTxVersion,
-} from '../config';
-import {
-  getWalletTokenAccount,
-  sendTx,
-} from './util';
+import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
+import { getWalletTokenAccount, sendTx } from './util'
+import { Keypair, PublicKey } from '@solana/web3.js'
 
-async function ammV3RemovePosition() {
-  // target pool id, in this example, USDC-RAY pool
-  const targetPoolId = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht';
-  // get wallet token accounts
-  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
-  // get all pool info from api
-  const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data.filter(
-    (pool: ApiAmmV3PoolsItem) => pool.id === targetPoolId
-  );
+type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
+type TestTxInputInfo = {
+  targetPool: string
+  walletTokenAccounts: WalletTokenAccounts
+  wallet: Keypair
+}
 
-  const info = (await AmmV3.fetchMultiplePoolInfos({
+/**
+ * pre-action: fetch basic info
+ * step 1: ammV3 info and ammV3 position
+ * step 2: make ammV3 remove position instructions
+ * step 3: create instructions by SDK function
+ * step 4: send transaction
+ */
+async function ammV3RemovePosition(input: TestTxInputInfo) {
+  // -------- pre-action: fetch basic info --------
+  const ammV3Pools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools).then((res) => res.json())).data
+  const ammV3Pool = ammV3Pools.find((pool: ApiAmmV3PoolsItem) => pool.id === input.targetPool)
+
+  // -------- step 1: ammV3 info and ammV3 position --------
+  const { [ammV3Pool.id]: sdkParsedAmmV3Info } = await AmmV3.fetchMultiplePoolInfos({
     connection,
-    poolKeys: ammV3Pool,
+    poolKeys: [ammV3Pool],
     chainTime: new Date().getTime() / 1000,
     ownerInfo: {
       wallet: wallet.publicKey,
-      tokenAccounts: walletTokenAccountFormat,
+      tokenAccounts: input.walletTokenAccounts,
     },
-  }))[targetPoolId]
+  })
+  const { state: ammV3PoolInfo, positionAccount } = sdkParsedAmmV3Info
+  assert(positionAccount && positionAccount.length, "position is not exist/is empty, so can't continue to add position")
+  const ammV3Position = positionAccount[0] // assume first one is your target
 
-  if (!info.positionAccount) throw Error('owner do not has some position')
-
-  // prepare instruction
+  // -------- step 2: make ammV3 remove position instructions --------
   const makeDecreaseLiquidityInstruction = await AmmV3.makeDecreaseLiquidityInstructionSimple({
     connection,
-    poolInfo: info.state,
-    ownerPosition: info.positionAccount[0],
+    poolInfo: ammV3PoolInfo,
+    ownerPosition: ammV3Position,
     ownerInfo: {
       feePayer: wallet.publicKey,
       wallet: wallet.publicKey,
-      tokenAccounts: walletTokenAccountFormat,
+      tokenAccounts: input.walletTokenAccounts,
       // closePosition: true, // for close
     },
-    liquidity: info.positionAccount[0].liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
+    liquidity: ammV3Position.liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
     // slippage: 1, // if encouter slippage check error, try uncomment this line and set a number manually
-  });
+  })
 
-  // prepare transactions
+  // -------- step 3: create instructions by SDK function --------
   const makeDecreaseLiquidityTransactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
     payer: wallet.publicKey,
     innerTransactions: makeDecreaseLiquidityInstruction.innerTransactions,
-  });
+  })
 
-  // send transactions
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeDecreaseLiquidityTransactions);
-  console.log(txids);
+  // -------- step 4: send transaction --------
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeDecreaseLiquidityTransactions)
+  return { txids }
 }
 
-ammV3RemovePosition();
+async function howToUse() {
+  const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
+  const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
+
+  ammV3RemovePosition({
+    targetPool,
+    walletTokenAccounts,
+    wallet: wallet,
+  }).then(({ txids }) => {
+    /** continue with txids */
+    console.log('txids', txids)
+  })
+}
