@@ -1,63 +1,71 @@
-import {
-  buildTransaction,
-  Utils1216,
-} from '@raydium-io/raydium-sdk';
+import { buildTransaction, Utils1216 } from '@raydium-io/raydium-sdk'
+import { Keypair } from '@solana/web3.js'
 
-import {
-  connection,
-  PROGRAMIDS,
-  wallet,
-  wantBuildTxVersion,
-} from '../config';
-import {
-  getWalletTokenAccount,
-  sendTx,
-} from './util';
+import { connection, PROGRAMIDS, wallet, wantBuildTxVersion } from '../config'
+import { getWalletTokenAccount, sendTx } from './util'
 
-export async function utils1216() {
+type TestTxInputInfo = {
+  wallet: Keypair
+}
+
+/**
+ * utils1216 is for compensation
+ *
+ * pre-action: fetch compensation info list
+ * step 1: create instructions by SDK function
+ * step 2: compose instructions to several transactions
+ * step 3: send transactions
+ */
+export async function utils1216(input: TestTxInputInfo) {
+  // -------- pre-action: fetch compensation info list --------
   const infoList = await Utils1216.getAllInfo({
     connection,
     programId: PROGRAMIDS.UTIL1216,
     poolIds: Utils1216.DEFAULT_POOL_ID,
-    wallet: wallet.publicKey,
-    chainTime: new Date().getTime() / 1000
+    wallet: input.wallet.publicKey,
+    chainTime: new Date().getTime() / 1000,
   })
-  
-  console.log(infoList)
 
+  // -------- step 1: create instructions by SDK function --------
   const claim = await Utils1216.makeClaimInstructionSimple({
     connection,
     poolInfo: infoList[0],
     ownerInfo: {
-      wallet: wallet.publicKey,
-      tokenAccounts: await getWalletTokenAccount(connection, wallet.publicKey),
-      associatedOnly: true
-    }
+      wallet: input.wallet.publicKey,
+      tokenAccounts: await getWalletTokenAccount(connection, input.wallet.publicKey),
+      associatedOnly: true,
+    },
   })
 
+  // -------- step 1: create instructions by SDK function --------
   const claimAll = await Utils1216.makeClaimAllInstructionSimple({
     connection,
     poolInfos: infoList,
     ownerInfo: {
-      wallet: wallet.publicKey,
-      tokenAccounts: await getWalletTokenAccount(connection, wallet.publicKey),
-      associatedOnly: true
-    }
+      wallet: input.wallet.publicKey,
+      tokenAccounts: await getWalletTokenAccount(connection, input.wallet.publicKey),
+      associatedOnly: true,
+    },
   })
 
-  console.log(claimAll.innerTransactions)
-
-
+  // -------- step 2: compose instructions to several transactions --------
   const transactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
+    payer: input.wallet.publicKey,
     innerTransactions: claimAll.innerTransactions,
   })
-  console.log(transactions)
 
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, transactions)
-  console.log(txids)
+  // -------- step 3: send transactions --------
+  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
+  return { txids }
 }
 
-utils1216()
+async function howToUse() {
+  utils1216({
+    wallet: wallet,
+  }).then(({ txids }) => {
+    /** continue with txids */
+    console.log('txids', txids)
+  })
+}

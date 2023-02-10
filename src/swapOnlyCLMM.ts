@@ -57,7 +57,7 @@ async function swapOnlyCLMM(input: TestTxInputInfo) {
     remainingAccounts,
   })
 
-  // -------- step 4: step 3: compose instructions to several transactions --------
+  // -------- step 4: compose instructions to several transactions --------
   const transactions = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
