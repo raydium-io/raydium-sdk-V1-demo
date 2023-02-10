@@ -1,22 +1,24 @@
 import {
   AmmV3,
+  buildTransaction,
   Percent,
-  SPL_ACCOUNT_LAYOUT,
   Token,
-  TOKEN_PROGRAM_ID,
   TokenAmount,
   TradeV2,
 } from '@raydium-io/raydium-sdk';
+import { PublicKey } from '@solana/web3.js';
+
 import {
-  Connection,
-  Keypair,
-  PublicKey,
-} from '@solana/web3.js';
+  connection,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 async function routeSwap() {
-  const wallet = Keypair.fromSecretKey(Buffer.from([ your wallet secret key]))
-  const connection = new Connection(' rpc address ')
-
   // get all pool info from api
   const ammV3Pool = (await (await fetch('https://api.raydium.io/v2/ammV3/ammPools')).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
   const ammV3PoolInfos = Object.values(await AmmV3.fetchMultiplePoolInfos({ connection, poolKeys: ammV3Pool, chainTime: new Date().getTime() / 1000 })).map(i => i.state)
@@ -55,14 +57,10 @@ async function routeSwap() {
   })
 
   // get user all account
-  const walletTokenAccount = await connection.getTokenAccountsByOwner(wallet.publicKey, { programId: TOKEN_PROGRAM_ID })
-  const walletTokenAccountFormet = walletTokenAccount.value.map(i => ({
-    pubkey: i.pubkey,
-    accountInfo: SPL_ACCOUNT_LAYOUT.decode(i.account.data)
-  }))
+  const walletTokenAccountFormet = await getWalletTokenAccount(connection, wallet.publicKey)
 
   // make swap transaction
-  const transactions = await TradeV2.makeSwapTranscation({
+  const innerTx = await TradeV2.makeSwapInstructionSimple({
     connection,
     swapInfo: routeList[0],
     ownerInfo: {
@@ -73,12 +71,16 @@ async function routeSwap() {
     checkTransaction: true
   })
 
-  console.log(transactions)
 
-  for (const itemTx of transactions.transactions) {
-    const txid = await connection.sendTransaction(itemTx.transaction, [wallet, ...itemTx.signer], { skipPreflight: true })
-    console.log(txid)
-  }
+  const transactions = await buildTransaction({
+    connection,
+    txType: wantBuildTxVersion,
+    payer: wallet.publicKey,
+    innerTransactions: innerTx.innerTransactions,
+  })
+
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, transactions)
+  console.log(txids)
 }
 
 routeSwap()
