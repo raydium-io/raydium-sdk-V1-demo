@@ -1,94 +1,112 @@
-import { BN } from 'bn.js';
+import { BN } from 'bn.js'
+const ZERO = new BN(0)
+type BN = typeof ZERO
 
-import {
-  buildTransaction,
-  Liquidity,
-  MAINNET_PROGRAM_ID,
-} from '@raydium-io/raydium-sdk';
-import {
-  Keypair,
-  PublicKey,
-} from '@solana/web3.js';
+import { buildTransaction, Liquidity, MAINNET_PROGRAM_ID, Token } from '@raydium-io/raydium-sdk'
+import { Keypair, PublicKey } from '@solana/web3.js'
+import { connection, PROGRAMIDS, wallet, wantBuildTxVersion } from '../config'
+import { getWalletTokenAccount, sendTx } from './util'
 
-import {
-  connection,
-  PROGRAMIDS,
-  wallet,
-  wantBuildTxVersion,
-} from '../config';
-import {
-  getWalletTokenAccount,
-  sendTx,
-} from './util';
+type CalcStartPrice = {
+  addBaseAmount: BN
+  addQuoteAmount: BN
+}
 
-async function ammCreatePool() {
-  // info
-  const marketId = Keypair.generate().publicKey
-  // const marketId = new PublicKey('market id')
-  const baseInfo = {
-    mint: new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
-    decimals: 6
-  }
-  const quoteInfo = {
-    mint: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-    decimals: 6
-  }
+function calcMarketStartPrice(calcInfo: CalcStartPrice) {
+  return calcInfo.addBaseAmount.toNumber() / 10 ** 6 / (calcInfo.addQuoteAmount.toNumber() / 10 ** 6)
+}
 
-  const willAddBaseAmount = new BN(10000) // 10000 / 10 ** 6
-  const willAddQuoteAmount = new BN(10000) // 10000 / 10 ** 6
-  console.log('will pool start price ', (willAddBaseAmount.toNumber() / 10 ** 6) / (willAddQuoteAmount.toNumber() / 10 ** 6))
+type LiquidityPairTargetInfo = {
+  baseToken: Token
+  quoteToken: Token
+  targetMargetId: PublicKey
+}
 
-  const startTime = new BN(Math.floor(new Date().getTime() / 1000)) // start time
-
-  // get associated pool keys
-  const associatedPoolKeys = await Liquidity.getAssociatedPoolKeys({
+function getMarketAssociatedPoolKeys(inputInfo: LiquidityPairTargetInfo) {
+  return Liquidity.getAssociatedPoolKeys({
     version: 4,
     marketVersion: 3,
-    baseMint: baseInfo.mint,
-    quoteMint: quoteInfo.mint,
-    baseDecimals: baseInfo.decimals,
-    quoteDecimals: quoteInfo.decimals,
-    marketId,
+    baseMint: inputInfo.baseToken.mint,
+    quoteMint: inputInfo.quoteToken.mint,
+    baseDecimals: inputInfo.baseToken.decimals,
+    quoteDecimals: inputInfo.quoteToken.decimals,
+    marketId: inputInfo.targetMargetId,
     programId: PROGRAMIDS.AmmV4,
     marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
-  });
+  })
+}
 
-  // get wallet token accounts
-  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
+type TestInputInfo = LiquidityPairTargetInfo &
+  CalcStartPrice & {
+    startTime: number // seconds
+  }
 
-  // prepare instruction
+/**
+ *
+ * step 1: create instructions by SDK function
+ * step 2: compose instructions to several transactions
+ * step 3: send transactions
+ */
+async function ammCreatePool(inputInfo: TestInputInfo): Promise<{ txids: string[] }> {
+  // -------- step 1: make instructions --------
+  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey)
   const initPoolInstructionResponse = await Liquidity.makeCreatePoolV4InstructionV2Simple({
     connection,
     programId: PROGRAMIDS.AmmV4,
     marketInfo: {
-      marketId,
-      programId: PROGRAMIDS.OPENBOOK_MARKET
+      marketId: inputInfo.targetMargetId,
+      programId: PROGRAMIDS.OPENBOOK_MARKET,
     },
-    baseMintInfo: baseInfo,
-    quoteMintInfo: quoteInfo,
-    baseAmount: willAddBaseAmount,
-    quoteAmount: willAddQuoteAmount,
-    startTime,
+    baseMintInfo: inputInfo.baseToken,
+    quoteMintInfo: inputInfo.quoteToken,
+    baseAmount: inputInfo.addBaseAmount,
+    quoteAmount: inputInfo.addQuoteAmount,
+    startTime: new BN(Math.floor(inputInfo.startTime)),
     ownerInfo: {
       feePayer: wallet.publicKey,
       wallet: wallet.publicKey,
       tokenAccounts: walletTokenAccountFormat,
-      useSOLBalance: true
+      useSOLBalance: true,
     },
-    associatedOnly: false
-  });
+    associatedOnly: false,
+  })
 
-  // prepare transactions
+  // -------- step 2: compose instructions to several transactions --------
   const createPoolTxs = await buildTransaction({
     connection,
     txType: wantBuildTxVersion,
     payer: wallet.publicKey,
     innerTransactions: initPoolInstructionResponse.innerTransactions,
-  });
+  })
 
-  // send transactions
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, createPoolTxs);
-  console.log(txids);
+  // -------- step 3: send transactions --------
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, createPoolTxs)
+
+  return { txids }
 }
 
-ammCreatePool();
+function howToUse() {
+  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
+  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const targetMargetId = Keypair.generate().publicKey
+  const addBaseAmount = new BN(10000) // 10000 / 10 ** 6,
+  const addQuoteAmount = new BN(10000) // 10000 / 10 ** 6,
+  const startTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // start from 7 days later
+
+  /* do something with start price if needed */
+  const startPrice = calcMarketStartPrice({ addBaseAmount, addQuoteAmount })
+
+  /* do something with market associated pool keys if needed */
+  const associatedPoolKeys = getMarketAssociatedPoolKeys({
+    baseToken,
+    quoteToken,
+    targetMargetId,
+  })
+
+  ammCreatePool({ startTime, addBaseAmount, addQuoteAmount, baseToken, quoteToken, targetMargetId }).then(
+    ({ txids }) => {
+      /** continue with txids */
+      console.log('txids', txids)
+    }
+  )
+}
