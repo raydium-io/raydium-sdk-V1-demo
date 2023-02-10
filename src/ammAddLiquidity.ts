@@ -14,26 +14,43 @@ import { PublicKey } from '@solana/web3.js'
 import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
 import { getWalletTokenAccount, sendTx } from './util'
 
+type TestInputInfo = {
+  baseToken: Token
+  quoteToken: Token
+  targetPool: string
+  inputTokenAmount: TokenAmount
+  slippage: Percent
+}
 const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
 const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
-const targetPoolPublicKey = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
+const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
 const inputTokenAmount = new TokenAmount(baseToken, 100)
 const slippage = new Percent(1, 100)
+
+const testInputInfo: TestInputInfo = {
+  baseToken,
+  quoteToken,
+  targetPool,
+  inputTokenAmount,
+  slippage,
+}
 const fetchAmmV2PoolData = () => fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).then((res) => res.json())
 
 /**
  * step 1: prepare basic info
- * step 2: compute another amount
- * step 3: make instructions
+ * step 2: compute (max) another amount
+ * step 3: create instructions by SDK function
  * step 4: compose instructions to several transactions
  * step 5: send transactions
  */
-async function ammAddLiquidity(): Promise<{ txids: string[]; anotherAmount: TokenAmount | CurrencyAmount }> {
+async function ammAddLiquidity(
+  inputInfo: TestInputInfo
+): Promise<{ txids: string[]; anotherAmount: TokenAmount | CurrencyAmount }> {
   // -------- step 1: prepare basic info --------
   const ammV2PoolData = await fetchAmmV2PoolData()
   assert(ammV2PoolData, 'fetch failed')
   const targetPoolInfo = [...ammV2PoolData.official, ...ammV2PoolData.unOfficial].find(
-    (poolInfo) => poolInfo.id === targetPoolPublicKey
+    (poolInfo) => poolInfo.id === inputInfo.targetPool
   )
   assert(targetPoolInfo, 'cannot find the target pool') // may be undefined if the Liquidity pool is not required for routing.
 
@@ -43,9 +60,9 @@ async function ammAddLiquidity(): Promise<{ txids: string[]; anotherAmount: Toke
   const { maxAnotherAmount, anotherAmount } = Liquidity.computeAnotherAmount({
     poolKeys,
     poolInfo: { ...targetPoolInfo, ...extraPoolInfo },
-    amount: inputTokenAmount,
-    anotherCurrency: quoteToken,
-    slippage: slippage,
+    amount: inputInfo.inputTokenAmount,
+    anotherCurrency: inputInfo.quoteToken,
+    slippage: inputInfo.slippage,
   })
 
   // -------- step 3: make instructions --------
@@ -54,7 +71,7 @@ async function ammAddLiquidity(): Promise<{ txids: string[]; anotherAmount: Toke
     connection,
     poolKeys,
     userKeys: { owner: wallet.publicKey, payer: wallet.publicKey, tokenAccounts: walletTokenAccounts },
-    amountInA: inputTokenAmount,
+    amountInA: inputInfo.inputTokenAmount,
     amountInB: maxAnotherAmount,
     fixedSide: 'a',
   })
@@ -74,7 +91,7 @@ async function ammAddLiquidity(): Promise<{ txids: string[]; anotherAmount: Toke
   return { txids, anotherAmount }
 }
 
-ammAddLiquidity().then((txInfo) => {
+ammAddLiquidity(testInputInfo).then((txInfo) => {
   /** continue with txInfo */
   console.log('txids', txInfo.txids)
 })
