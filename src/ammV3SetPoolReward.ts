@@ -48,14 +48,7 @@ async function ammV3SetPoolReward(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
-    rewardInfos: [
-      {
-        mint: new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
-        openTime: 4073858467, // Wed Feb 04 2099 03:21:07 GMT+0000
-        endTime: 4076277667, // Wed Mar 04 2099 03:21:07 GMT+0000
-        perSecond: new Decimal(0.000001),
-      },
-    ],
+    rewardInfos: input.rewardInfos.map((r) => ({ ...r, mint: r.token.mint })),
     chainTime: new Date().getTime() / 1000,
   })
 
