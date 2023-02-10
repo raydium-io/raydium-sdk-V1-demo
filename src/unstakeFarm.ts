@@ -10,7 +10,6 @@ import {
   Token,
   TokenAmount,
 } from '@raydium-io/raydium-sdk';
-import { PublicKey } from '@solana/web3.js';
 
 import {
   connection,
@@ -32,19 +31,16 @@ async function unstakeFarm() {
   assert(farmPool, 'farm pool is undefined');
 
   // get target farm json info
-  let targetFarmJsonInfo: any = farmPool.raydium.find((pool) => pool.id === targetFarmPublicKeyString);
+  const targetFarmJsonInfo: any = farmPool.raydium.find((pool) => pool.id === targetFarmPublicKeyString);
   assert(targetFarmJsonInfo, 'target farm not found');
 
   // parse farm pool json info to to fit FarmPoolKeys type
-  const symbol = targetFarmJsonInfo.symbol;
-  delete targetFarmJsonInfo.symbol;
-  let targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo);
-  targetFarmInfo['symbol'] = symbol;
+  const targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo) as FarmPoolKeys;
 
   // fetch target farm info
   const farmFetchInfo = await Farm.fetchMultipleInfoAndUpdate({
     connection,
-    pools: [targetFarmInfo as FarmPoolKeys],
+    pools: [targetFarmInfo],
     owner: wallet.publicKey,
   });
   assert(
@@ -57,7 +53,7 @@ async function unstakeFarm() {
 
   // prepare withdraw amount
   const lpToken = new Token(
-    new PublicKey('FbC6K13MzHvN42bXrtGaWsvZY9fxrackRSZcBGfjPc7m'),
+    targetFarmInfo.lpMint,
     6,
     'RAY-USDC',
     'RAY-USDC'

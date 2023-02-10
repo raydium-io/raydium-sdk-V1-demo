@@ -29,10 +29,10 @@
   resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.7.1.tgz#b251c70f824ce3ca7f8dc3df08d58f005cc0507c"
   integrity sha512-hOUk6AyBFmqVrv7k5WAw/LpszxVbj9gGN4JRkIX52fdFAj1UA61KXmZDvqVEm+pOyec3+fIeZB02LYa/pWOArw==
 
-"@raydium-io/raydium-sdk@^1.2.0-beta.1":
-  version "1.2.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.2.0-beta.1.tgz#3ddcd6082a257fae0865e1f8fc3cf7b9822f7081"
-  integrity sha512-6OUAF55Dzlb3YL7Tc/+XByDjuLsvVtNes4BjDecMdc8ydZ+hyl0EGDLvBud0SjM1gCj5NOSj8meG0eG39VtplA==
+"@raydium-io/raydium-sdk@^1.2.0-beta.7":
+  version "1.2.0-beta.7"
+  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.2.0-beta.7.tgz#4d9220171dce86bb20bf0d48fa4de247c69f7a17"
+  integrity sha512-X184fDBoUtOT9iHntz3y95Hu3C/DsiiSEjJGHDCDEC4J9xyicBNBwdLrtsRpS0bPG1t5EjSwMddmXp96YXop5g==
   dependencies:
     "@colors/colors" "^1.5.0"
     "@solana/buffer-layout" "^4.0.1"

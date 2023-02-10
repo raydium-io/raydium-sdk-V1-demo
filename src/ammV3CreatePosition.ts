@@ -1,4 +1,3 @@
-import assert from 'assert';
 import Decimal from 'decimal.js';
 
 import {
@@ -29,19 +28,14 @@ async function ammV3CreatePosition() {
   const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data.filter(
     (pool: ApiAmmV3PoolsItem) => pool.id === targetPoolId
   );
-  const ammV3PoolInfoList = Object.values(
-    await AmmV3.fetchMultiplePoolInfos({
-      connection,
-      poolKeys: ammV3Pool,
-      chainTime: new Date().getTime() / 1000,
-    })
-  ).map((i) => i.state);
-
-  // if no pool info, abort
-  assert(ammV3PoolInfoList.length > 0, 'cannot find the target pool info');
+  const ammV3PoolInfoDict = await AmmV3.fetchMultiplePoolInfos({
+    connection,
+    poolKeys: ammV3Pool,
+    chainTime: new Date().getTime() / 1000,
+  })
 
   // get the first pool info
-  const ammV3PoolInfo = ammV3PoolInfoList[0];
+  const ammV3PoolInfo = ammV3PoolInfoDict[targetPoolId].state
 
   // get wallet token accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
@@ -50,12 +44,12 @@ async function ammV3CreatePosition() {
   const { tick: tickLower } = AmmV3.getPriceAndTick({
     poolInfo: ammV3PoolInfo,
     baseIn: true,
-    price: new Decimal(0.5),
+    price: new Decimal(0.5), // will add position start price
   });
   const { tick: tickUpper } = AmmV3.getPriceAndTick({
     poolInfo: ammV3PoolInfo,
     baseIn: true,
-    price: new Decimal(1.5),
+    price: new Decimal(1.5), // will add position end price
   });
 
   // prepare base token amount

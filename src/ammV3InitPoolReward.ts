@@ -1,4 +1,3 @@
-import assert from 'assert';
 import Decimal from 'decimal.js';
 
 import {
@@ -15,7 +14,10 @@ import {
   wallet,
   wantBuildTxVersion,
 } from '../config';
-import { getWalletTokenAccount } from './util';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
 
@@ -26,19 +28,14 @@ async function ammV3InitPoolReward() {
   const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data.filter(
     (pool: ApiAmmV3PoolsItem) => pool.id === targetPoolId
   );
-  const ammV3PoolInfoList = Object.values(
-    await AmmV3.fetchMultiplePoolInfos({
-      connection,
-      poolKeys: ammV3Pool,
-      chainTime: new Date().getTime() / 1000,
-    })
-  ).map((i) => i.state);
-
-  // if no pool info, abort
-  assert(ammV3PoolInfoList.length > 0, 'cannot find the target pool info');
+  const ammV3PoolInfoDict = await AmmV3.fetchMultiplePoolInfos({
+    connection,
+    poolKeys: ammV3Pool,
+    chainTime: new Date().getTime() / 1000,
+  })
 
   // get the first pool info
-  const ammV3PoolInfo = ammV3PoolInfoList[0];
+  const ammV3PoolInfo = ammV3PoolInfoDict[targetPoolId].state
 
   // get wallet token accounts
   const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
@@ -69,14 +66,8 @@ async function ammV3InitPoolReward() {
     innerTransactions: makeInitRewardsInstruction.innerTransactions,
   });
 
-  // simulate transactions
-  console.log(
-    await Promise.all(makeInitRewardsTransactions.map(async (i) => await connection.simulateTransaction(i)))
-  );
-  return;
-
-  // const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeInitRewardsTransactions);
-  // console.log(txids);
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeInitRewardsTransactions);
+  console.log(txids);
 }
 
 ammV3InitPoolReward();

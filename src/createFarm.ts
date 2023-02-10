@@ -16,17 +16,20 @@ import {
   wallet,
   wantBuildTxVersion,
 } from '../config';
-import { getWalletTokenAccount } from './util';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
 
 async function createFarm() {
   // target pool public key string, in this example, USDC-RAY pool
   const targetPoolPublicKeyString = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6';
-  // get v2 pool list
-  const ammV2Pool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  // get  pool list
+  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
   // get target pool
-  const targetPoolInfo = [...ammV2Pool.official, ...ammV2Pool.unOfficial].find(
+  const targetPoolInfo = [...ammPool.official, ...ammPool.unOfficial].find(
     (info) => info.id === targetPoolPublicKeyString
   ) as LiquidityPoolJsonInfo;
 
@@ -39,8 +42,10 @@ async function createFarm() {
   const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY');
 
   // lock info
-  const lockMint = '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R';
-  const lockVault = 'FrspKwj8i3pNmKwXreTveC4fu7KL5ZbGeXdZBe2XViu1';
+  const lockInfo = {
+    lockMint: new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
+    lockVault: new PublicKey('FrspKwj8i3pNmKwXreTveC4fu7KL5ZbGeXdZBe2XViu1'),
+  }
 
   // prepare instruction
   const makeCreateFarmInstruction = await Farm.makeCreateFarmInstructionSimple({
@@ -62,10 +67,7 @@ async function createFarm() {
           rewardType: 'Standard SPL',
         },
       ],
-      lockInfo: {
-        lockMint: new PublicKey(lockMint),
-        lockVault: new PublicKey(lockVault),
-      },
+      lockInfo,
     },
   });
 
@@ -77,11 +79,9 @@ async function createFarm() {
     innerTransactions: makeCreateFarmInstruction.innerTransactions,
   });
 
-  // simulate transactions
-  console.log(
-    await Promise.all(makeCreateFarmTransactions.map(async (i) => await connection.simulateTransaction(i)))
-  );
-  return;
+  // send transactions
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeCreateFarmTransactions);
+  console.log(txids);
 }
 
 createFarm();

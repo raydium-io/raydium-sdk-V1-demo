@@ -1,11 +1,21 @@
-import BN from 'bn.js';
 import Decimal from 'decimal.js';
 
-import { AmmV3, AmmV3ConfigInfo, buildTransaction, ENDPOINT, Token } from '@raydium-io/raydium-sdk';
+import {
+  AmmV3,
+  AmmV3ConfigInfo,
+  buildTransaction,
+  ENDPOINT,
+} from '@raydium-io/raydium-sdk';
 import { PublicKey } from '@solana/web3.js';
 
-import { connection, PROGRAMIDS, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config';
-import { getWalletTokenAccount } from './util';
+import {
+  connection,
+  PROGRAMIDS,
+  RAYDIUM_MAINNET_API,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import { sendTx } from './util';
 
 // THIS DEMO HAS NOT BEEN TESTING YET!!!!!
 
@@ -20,84 +30,44 @@ async function ammV3CreatePool() {
   ammConfig = { ...ammConfig, id: new PublicKey(ammConfig.id) };
 
   // coin info
-  const baseToken = new Token(
-    new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-    6,
-    'USDC',
-    'USDC'
-  );
-  const quoteToken = new Token(
-    new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
-    6,
-    'RAY',
-    'RAY'
-  );
+  const baseToken = {
+    mint: new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+    decimals: 6,
+    symbol: 'USDC'
+  }
+  const quoteToken = {
+    mint: new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'),
+    decimals: 6,
+    symbol: 'RAY'
+  }
+
+  const startPoolPrice = new Decimal(1)
 
   const programId = PROGRAMIDS.CLMM;
-
-  // get wallet token accounts
-  const walletTokenAccountFormat = await getWalletTokenAccount(connection, wallet.publicKey);
 
   // prepare instruction
   const makeCreatePoolInstruction = await AmmV3.makeCreatePoolInstructionSimple({
     connection,
     programId,
     owner: wallet.publicKey,
-    mint1: {
-      mint: baseToken.mint,
-      decimals: baseToken.decimals,
-    },
-    mint2: {
-      mint: quoteToken.mint,
-      decimals: quoteToken.decimals,
-    },
+    mint1: baseToken,
+    mint2: quoteToken,
     ammConfig,
-    initialPrice: new Decimal(1),
+    initialPrice: startPoolPrice,
   });
 
   // prepare mock pool info
   const mockPoolInfo = AmmV3.makeMockPoolInfo({
     programId,
-    mint1: {
-      mint: baseToken.mint,
-      decimals: baseToken.decimals,
-    },
-    mint2: {
-      mint: quoteToken.mint,
-      decimals: quoteToken.decimals,
-    },
+    mint1: baseToken,
+    mint2: quoteToken,
     ammConfig,
-    createPoolInstructionSimpleAddress: { ...makeCreatePoolInstruction.address },
+    createPoolInstructionSimpleAddress: makeCreatePoolInstruction.address,
     owner: wallet.publicKey,
-    initialPrice: new Decimal(1),
+    initialPrice: startPoolPrice,
   });
 
-  // get closest tick w/ prefer price range
-  const { tick: tickLower } = AmmV3.getPriceAndTick({
-    poolInfo: mockPoolInfo,
-    baseIn: true,
-    price: new Decimal(0.5),
-  });
-  const { tick: tickUpper } = AmmV3.getPriceAndTick({
-    poolInfo: mockPoolInfo,
-    baseIn: true,
-    price: new Decimal(1.5),
-  });
-
-  // prepare instruction
-  const makeOpenPositionInstruction = await AmmV3.makeOpenPositionInstructionSimple({
-    connection,
-    poolInfo: mockPoolInfo,
-    ownerInfo: {
-      feePayer: wallet.publicKey,
-      wallet: wallet.publicKey,
-      tokenAccounts: walletTokenAccountFormat,
-    },
-    tickLower: tickLower,
-    tickUpper: tickUpper,
-    liquidity: new BN(1),
-    slippage: 1,
-  });
+  console.log('pool info', mockPoolInfo)
 
   // prepare transactions
   const createPooltransactions = await buildTransaction({
@@ -107,22 +77,9 @@ async function ammV3CreatePool() {
     innerTransactions: makeCreatePoolInstruction.innerTransactions,
   });
 
-  // prepare transactions
-  const openPoolPositiontransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
-    innerTransactions: makeOpenPositionInstruction.innerTransactions,
-  });
-
-  // simulate transactions
-  console.log(
-    await Promise.all(createPooltransactions.map(async (i) => await connection.simulateTransaction(i)))
-  );
-
-  console.log(
-    await Promise.all(openPoolPositiontransactions.map(async (i) => await connection.simulateTransaction(i)))
-  );
+  // send transactions
+  const txids = await sendTx(connection, wallet, wantBuildTxVersion, createPooltransactions);
+  console.log(txids);
 }
 
 ammV3CreatePool();

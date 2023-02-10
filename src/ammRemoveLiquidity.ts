@@ -25,10 +25,10 @@ import {
 async function ammRemoveLiquidity() {
   // target pool public key string, in this example, USDC-RAY pool
   const targetPoolPublicKeyString = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6';
-  // get v2 pool list
-  const ammV2Pool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  // get pool list
+  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json(); // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
   // get target pool
-  const targetPoolInfos = [...ammV2Pool.official, ...ammV2Pool.unOfficial].filter(
+  const targetPoolInfos = [...ammPool.official, ...ammPool.unOfficial].filter(
     (info) => info.id === targetPoolPublicKeyString
   );
 

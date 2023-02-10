@@ -9,9 +9,9 @@ import {
   Keypair,
 } from '@solana/web3.js';
 
-export const wallet = Keypair.fromSecretKey(Buffer.from(<YOUR_WALLET_SECRET_KEY>));
+export const wallet = Keypair.fromSecretKey(Buffer.from('<YOUR_WALLET_SECRET_KEY>'))
 
-export const connection = new Connection(<YOUR_RPC_URL>);
+export const connection = new Connection('<YOUR_RPC_URL>');
 
 export const PROGRAMIDS = MAINNET_PROGRAM_ID;
 

@@ -32,22 +32,19 @@ async function stakeFarm() {
   assert(farmPool, 'farm pool is undefined');
 
   // get target farm json info
-  let targetFarmJsonInfo: any = farmPool.raydium.find((pool) => pool.id === targetFarmPublicKeyString);
+  const targetFarmJsonInfo: any = farmPool.raydium.find((pool) => pool.id === targetFarmPublicKeyString);
   assert(targetFarmJsonInfo, 'target farm not found');
 
   // parse farm pool json info to to fit FarmPoolKeys type
-  const symbol = targetFarmJsonInfo.symbol;
-  delete targetFarmJsonInfo.symbol;
-  let targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo);
-  targetFarmInfo['symbol'] = symbol;
+  const targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo) as FarmPoolKeys;
 
   // fetch target farm info
-  const farmFetchInfo = await Farm.fetchMultipleInfoAndUpdate({
+  const farmFetchInfo = (await Farm.fetchMultipleInfoAndUpdate({
     connection,
-    pools: [targetFarmInfo as FarmPoolKeys],
-  });
+    pools: [targetFarmInfo],
+  }))[targetFarmPublicKeyString];
   assert(
-    Object.keys(farmFetchInfo).length !== 0 && farmFetchInfo[targetFarmPublicKeyString],
+    Object.keys(farmFetchInfo).length !== 0 && farmFetchInfo,
     'cannot fetch target farm info'
   );
 
@@ -66,8 +63,8 @@ async function stakeFarm() {
   // prepare instruction
   const makeDepositInstruction = await Farm.makeDepositInstructionSimple({
     connection,
-    poolKeys: targetFarmInfo as FarmPoolKeys,
-    fetchPoolInfo: farmFetchInfo[targetFarmPublicKeyString],
+    poolKeys: targetFarmInfo,
+    fetchPoolInfo: farmFetchInfo,
     ownerInfo: {
       feePayer: wallet.publicKey,
       wallet: wallet.publicKey,

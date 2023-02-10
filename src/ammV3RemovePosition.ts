@@ -1,10 +1,7 @@
-import assert from 'assert';
 import BN from 'bn.js';
 
 import {
   AmmV3,
-  AmmV3PoolInfo,
-  AmmV3PoolPersonalPosition,
   ApiAmmV3PoolsItem,
   buildTransaction,
   ENDPOINT,
@@ -31,47 +28,30 @@ async function ammV3RemovePosition() {
     (pool: ApiAmmV3PoolsItem) => pool.id === targetPoolId
   );
 
-  let ammV3PoolInfoList: AmmV3PoolInfo[] = [];
-  let ammV3PersonalPositionList: AmmV3PoolPersonalPosition[] = [];
-  Object.values(
-    await AmmV3.fetchMultiplePoolInfos({
-      connection,
-      poolKeys: ammV3Pool,
-      chainTime: new Date().getTime() / 1000,
-      ownerInfo: {
-        wallet: wallet.publicKey,
-        tokenAccounts: walletTokenAccountFormat,
-      },
-    })
-  ).forEach((i) => {
-    ammV3PoolInfoList.push(i.state);
-    if (i.positionAccount) {
-      ammV3PersonalPositionList = i.positionAccount;
-    }
-  });
+  const info = (await AmmV3.fetchMultiplePoolInfos({
+    connection,
+    poolKeys: ammV3Pool,
+    chainTime: new Date().getTime() / 1000,
+    ownerInfo: {
+      wallet: wallet.publicKey,
+      tokenAccounts: walletTokenAccountFormat,
+    },
+  }))[targetPoolId]
 
-  // if no pool info, abort
-  assert(ammV3PoolInfoList.length > 0, 'cannot find the target pool info');
-  // if no position
-  assert(ammV3PersonalPositionList.length > 0, 'no position in the target pool');
-
-  // get the first pool info (which is our target pool)
-  const ammV3PoolInfo = ammV3PoolInfoList[0];
-  // get the first position we have (you can choose other position for adding)
-  const ammV3Position = ammV3PersonalPositionList[0];
+  if (!info.positionAccount) throw Error('owner do not has some position')
 
   // prepare instruction
   const makeDecreaseLiquidityInstruction = await AmmV3.makeDecreaseLiquidityInstructionSimple({
     connection,
-    poolInfo: ammV3PoolInfo,
-    ownerPosition: ammV3Position,
+    poolInfo: info.state,
+    ownerPosition: info.positionAccount[0],
     ownerInfo: {
       feePayer: wallet.publicKey,
       wallet: wallet.publicKey,
       tokenAccounts: walletTokenAccountFormat,
       // closePosition: true, // for close
     },
-    liquidity: ammV3Position.liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
+    liquidity: info.positionAccount[0].liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
     // slippage: 1, // if encouter slippage check error, try uncomment this line and set a number manually
   });
 
