@@ -1,11 +1,29 @@
-import { BN } from 'bn.js'
+import { BN } from 'bn.js';
+
+import {
+  buildTransaction,
+  Liquidity,
+  MAINNET_PROGRAM_ID,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  PROGRAMIDS,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
+
 const ZERO = new BN(0)
 type BN = typeof ZERO
-
-import { buildTransaction, Liquidity, MAINNET_PROGRAM_ID, Token } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, PROGRAMIDS, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
 
 type CalcStartPrice = {
   addBaseAmount: BN

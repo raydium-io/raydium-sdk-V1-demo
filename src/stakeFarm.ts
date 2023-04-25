@@ -1,3 +1,5 @@
+import assert from 'assert';
+
 import {
   ApiFarmInfo,
   buildTransaction,
@@ -5,12 +7,24 @@ import {
   FarmPoolKeys,
   jsonInfo2PoolKeys,
   Token,
-  TokenAmount
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import assert from 'assert'
-import { connection, ENDPOINT, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+  TokenAmount,
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  ENDPOINT,
+  RAYDIUM_MAINNET_API,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -34,9 +48,13 @@ async function stakeFarm(input: TestTxInputInfo) {
   const targetFarmJsonInfo: any = farmPools.raydium.find((pool) => pool.id === input.targetFarm)
   assert(targetFarmJsonInfo, 'target farm not found')
   const targetFarmInfo = jsonInfo2PoolKeys(targetFarmJsonInfo) as FarmPoolKeys
+
+  const chainTime = Math.floor(new Date().getTime() / 1000) // TODO
+
   const { [input.targetFarm]: farmFetchInfo } = await Farm.fetchMultipleInfoAndUpdate({
     connection,
     pools: [targetFarmInfo],
+    chainTime,
   })
   assert(Object.keys(farmFetchInfo).length && farmFetchInfo, 'cannot fetch target farm info')
 

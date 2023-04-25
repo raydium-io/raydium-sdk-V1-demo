@@ -1,8 +1,26 @@
-import { AmmV3, AmmV3ConfigInfo, buildTransaction, ENDPOINT, Token } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import Decimal from 'decimal.js'
-import { connection, PROGRAMIDS, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { sendTx } from './util'
+import BN from 'bn.js';
+import Decimal from 'decimal.js';
+
+import {
+  AmmV3,
+  AmmV3ConfigInfo,
+  buildTransaction,
+  ENDPOINT,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  PROGRAMIDS,
+  RAYDIUM_MAINNET_API,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import { sendTx } from './util';
 
 type TestTxInputInfo = {
   baseToken: Token
@@ -10,6 +28,7 @@ type TestTxInputInfo = {
   ammV3ConfigId: string
   wallet: Keypair
   startPoolPrice: Decimal
+  startTime: BN
 }
 
 /**
@@ -41,6 +60,7 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
     mint2: input.quoteToken,
     ammConfig,
     initialPrice: input.startPoolPrice,
+    startTime: input.startTime,
   })
 
   // -------- step 2: (optional) get mockPool info --------
@@ -52,6 +72,7 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
     createPoolInstructionSimpleAddress: makeCreatePoolInstruction.address,
     owner: input.wallet.publicKey,
     initialPrice: input.startPoolPrice,
+    startTime: input.startTime
   })
 
   // -------- step 3: compose instructions to several transactions --------
@@ -72,6 +93,7 @@ async function howToUse() {
   const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
   const ammV3ConfigId = 'E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'
   const startPoolPrice = new Decimal(1)
+  const startTime = new BN(Math.floor(new Date().getTime() / 1000))
 
   ammV3CreatePool({
     baseToken,
@@ -79,6 +101,7 @@ async function howToUse() {
     ammV3ConfigId,
     wallet: wallet,
     startPoolPrice,
+    startTime,
   }).then(({ txids, mockPoolInfo }) => {
     /** continue with txids */
     console.log('txids', txids)

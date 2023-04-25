@@ -1,18 +1,28 @@
-import assert from 'assert'
+import assert from 'assert';
+
 import {
   AmmV3,
-  AmmV3PoolInfo,
-  AmmV3PoolPersonalPosition,
   ApiAmmV3PoolsItem,
   buildTransaction,
   ENDPOINT,
-  Percent,
   Token,
   TokenAmount,
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  RAYDIUM_MAINNET_API,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
