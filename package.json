@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "@raydium-io/raydium-sdk": "^1.3.0-beta.15",
+    "@raydium-io/raydium-sdk": "1.3.0-beta.17",
     "@solana/spl-token": "^0.3.7",
-    "@solana/web3.js": "^1.75.0",
+    "@solana/web3.js": "1.73.0",
     "bs58": "^5.0.0",
     "decimal.js": "^10.4.3",
     "typescript": "^5.0.4"

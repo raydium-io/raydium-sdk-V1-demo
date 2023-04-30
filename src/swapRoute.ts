@@ -1,14 +1,35 @@
-import { AmmV3, buildTransaction, ENDPOINT, Percent, Token, TokenAmount, TradeV2 } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+import {
+  AmmV3,
+  buildTransaction,
+  Currency,
+  CurrencyAmount,
+  ENDPOINT,
+  Percent,
+  Token,
+  TokenAmount,
+  TradeV2,
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  RAYDIUM_MAINNET_API,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
-  inputToken: Token
-  outputToken: Token
-  targetPool: string
-  inputTokenAmount: TokenAmount
+  inputToken: Token | Currency
+  outputToken: Token | Currency
+  inputTokenAmount: TokenAmount | CurrencyAmount
   slippage: Percent
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
@@ -34,8 +55,8 @@ async function routeSwap(input: TestTxInputInfo) {
 
   // -------- step 1: get all route --------
   const getRoute = TradeV2.getAllRoute({
-    inputMint: input.inputToken.mint,
-    outputMint: input.outputToken.mint,
+    inputMint: input.inputToken instanceof Token ? input.inputToken.mint : PublicKey.default,
+    outputMint: input.outputToken instanceof Token ? input.outputToken.mint : PublicKey.default,
     apiPoolList: ammV2Pool,
     ammV3List: ammV3PoolInfos,
   })
@@ -84,17 +105,18 @@ async function routeSwap(input: TestTxInputInfo) {
 }
 
 async function howToUse() {
-  const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
+  // sol -> new Currency(9, 'SOL', 'SOL')
   const outputToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
   const inputToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
-  const inputTokenAmount = new TokenAmount(inputToken, 100)
+  // const inputToken = new Currency(9, 'SOL', 'SOL')
+
+  const inputTokenAmount = new (inputToken instanceof Token ? TokenAmount : CurrencyAmount)(inputToken, 100)
   const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   routeSwap({
     inputToken,
     outputToken,
-    targetPool,
     inputTokenAmount,
     slippage,
     walletTokenAccounts,
@@ -104,3 +126,5 @@ async function howToUse() {
     console.log('txids', txids)
   })
 }
+
+howToUse()
