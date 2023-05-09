@@ -89,6 +89,11 @@ async function routeSwap(input: TestTxInputInfo) {
       associatedOnly: true,
     },
     checkTransaction: true,
+    
+    computeBudgetConfig: { // if you want add compute instruction
+      units: 400000, // compute instruction
+      microLamports: 1, // fee add 1 * 400000 / 10 ** 9 SOL
+    },
   })
 
   // -------- step 5: compose instructions to several transactions --------
