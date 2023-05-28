@@ -1,3 +1,5 @@
+import BN from 'bn.js';
+
 import {
   AmmV3,
   buildTransaction,
@@ -33,6 +35,11 @@ type TestTxInputInfo = {
   slippage: Percent
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
+
+  feeConfig?: {
+    feeBps: BN,
+    feeAccount: PublicKey
+  }
 }
 
 /**
@@ -77,6 +84,8 @@ async function routeSwap(input: TestTxInputInfo) {
     outputToken: input.outputToken,
     slippage: input.slippage,
     chainTime: new Date().getTime() / 1000, // this chain time
+
+    feeConfig: input.feeConfig
   })
 
   // -------- step 4: create instructions by SDK function --------
@@ -87,6 +96,7 @@ async function routeSwap(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
       associatedOnly: true,
+      checkCreateATAOwner: true,
     },
     checkTransaction: true,
     
@@ -125,7 +135,12 @@ async function howToUse() {
     inputTokenAmount,
     slippage,
     walletTokenAccounts,
-    wallet: wallet,
+    wallet,
+
+    feeConfig: {
+      feeBps: new BN(25),
+      feeAccount: Keypair.generate().publicKey // test
+    }
   }).then(({ txids }) => {
     /** continue with txids */
     console.log('txids', txids)

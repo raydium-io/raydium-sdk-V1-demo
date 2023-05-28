@@ -1,8 +1,19 @@
-import { buildTransaction, Utils1216 } from '@raydium-io/raydium-sdk'
-import { Keypair } from '@solana/web3.js'
+import {
+  buildTransaction,
+  Utils1216,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
 
-import { connection, PROGRAMIDS, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+import {
+  connection,
+  PROGRAMIDS,
+  wallet,
+  wantBuildTxVersion,
+} from '../config';
+import {
+  getWalletTokenAccount,
+  sendTx,
+} from './util';
 
 type TestTxInputInfo = {
   wallet: Keypair
@@ -34,6 +45,7 @@ export async function utils1216(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: await getWalletTokenAccount(connection, input.wallet.publicKey),
       associatedOnly: true,
+      checkCreateATAOwner: true,
     },
   })
 
@@ -45,6 +57,7 @@ export async function utils1216(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: await getWalletTokenAccount(connection, input.wallet.publicKey),
       associatedOnly: true,
+      checkCreateATAOwner: true,
     },
   })
 

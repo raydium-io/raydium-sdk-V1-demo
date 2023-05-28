@@ -89,6 +89,7 @@ async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] 
       useSOLBalance: true,
     },
     associatedOnly: false,
+    checkCreateATAOwner: true,
   })
 
   // -------- step 2: compose instructions to several transactions --------
