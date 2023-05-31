@@ -34,14 +34,14 @@ async function checkClmmPosition() {
   });
 
   console.log("num of positions:", gPA.length);
-  let check_sum = new BN(0);
+  let checkSumLiquidity = new BN(0);
   for (const account of gPA) {
     const parsed = PositionInfoLayout.decode(account.account.data);
 
     const owner = await findNftOwner(parsed.nftMint);
 
     const status = checkPositionStatus(poolInfo, parsed);
-    if (status === "InRange") check_sum = check_sum.add(parsed.liquidity);
+    if (status === "InRange") checkSumLiquidity = checkSumLiquidity.add(parsed.liquidity);
 
     const amounts = LiquidityMath.getAmountsFromLiquidity(
       poolInfo.sqrtPriceX64,
@@ -64,7 +64,7 @@ async function checkClmmPosition() {
     );
   }
 
-  console.log("check sum:", check_sum.eq(poolInfo.liquidity));
+  console.log("check sum:", checkSumLiquidity.eq(poolInfo.liquidity));
 }
 
 function checkPositionStatus(poolInfo: {tickCurrent: number}, position: {tickLower: number, tickUpper: number}) {
