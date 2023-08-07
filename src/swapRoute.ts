@@ -2,15 +2,18 @@ import BN from 'bn.js';
 
 import {
   AmmV3,
-  buildTransaction,
+  ApiAmmV3PoolsItem,
+  ApiPoolInfo,
   Currency,
   CurrencyAmount,
   ENDPOINT,
+  fetchMultipleMintInfos,
   Percent,
   Token,
   TokenAmount,
   TradeV2,
 } from '@raydium-io/raydium-sdk';
+import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
   Keypair,
   PublicKey,
@@ -18,13 +21,15 @@ import {
 
 import {
   connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  PROGRAMIDS,
   RAYDIUM_MAINNET_API,
   wallet,
-  wantBuildTxVersion,
 } from '../config';
 import {
+  buildAndSendTx,
   getWalletTokenAccount,
-  sendTx,
 } from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
@@ -53,18 +58,18 @@ type TestTxInputInfo = {
  */
 async function routeSwap(input: TestTxInputInfo) {
   // -------- pre-action: fetch ammV3 pools info and ammV2 pools info --------
-  const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
+  const clmmPools: ApiAmmV3PoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
   const ammV3PoolInfos = Object.values(
-    await AmmV3.fetchMultiplePoolInfos({ connection, poolKeys: ammV3Pool, chainTime: new Date().getTime() / 1000 })
+    await AmmV3.fetchMultiplePoolInfos({ connection, poolKeys: clmmPools, chainTime: new Date().getTime() / 1000 })
   ).map((i) => i.state)
 
-  const ammV2Pool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  const sPool: ApiPoolInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
 
   // -------- step 1: get all route --------
   const getRoute = TradeV2.getAllRoute({
     inputMint: input.inputToken instanceof Token ? input.inputToken.mint : PublicKey.default,
     outputMint: input.outputToken instanceof Token ? input.outputToken.mint : PublicKey.default,
-    apiPoolList: ammV2Pool,
+    apiPoolList: sPool,
     ammV3List: ammV3PoolInfos,
   })
 
@@ -85,11 +90,18 @@ async function routeSwap(input: TestTxInputInfo) {
     slippage: input.slippage,
     chainTime: new Date().getTime() / 1000, // this chain time
 
-    feeConfig: input.feeConfig
+    feeConfig: input.feeConfig,
+
+    mintInfos: await fetchMultipleMintInfos({connection, mints: [
+      ...clmmPools.map(i => [{mint: i.mintA, program: i.mintProgramIdA}, {mint: i.mintB, program: i.mintProgramIdB}]).flat().filter(i => i.program === TOKEN_2022_PROGRAM_ID.toString()).map(i => new PublicKey(i.mint)),
+    ]}),
+
+    epochInfo: await connection.getEpochInfo(),
   })
 
   // -------- step 4: create instructions by SDK function --------
   const { innerTransactions } = await TradeV2.makeSwapInstructionSimple({
+    routeProgram: PROGRAMIDS.Router,
     connection,
     swapInfo: routeInfo,
     ownerInfo: {
@@ -98,31 +110,21 @@ async function routeSwap(input: TestTxInputInfo) {
       associatedOnly: true,
       checkCreateATAOwner: true,
     },
-    checkTransaction: true,
     
     computeBudgetConfig: { // if you want add compute instruction
       units: 400000, // compute instruction
       microLamports: 1, // fee add 1 * 400000 / 10 ** 9 SOL
     },
+    makeTxVersion,
   })
 
-  // -------- step 5: compose instructions to several transactions --------
-  const transactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: innerTransactions,
-  })
-
-  // -------- step 6: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
-  return { txids }
+  return { txids: await buildAndSendTx(innerTransactions) }
 }
 
 async function howToUse() {
   // sol -> new Currency(9, 'SOL', 'SOL')
-  const outputToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const inputToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const outputToken = DEFAULT_TOKEN.USDC // USDC
+  const inputToken = DEFAULT_TOKEN.RAY // RAY
   // const inputToken = new Currency(9, 'SOL', 'SOL')
 
   const inputTokenAmount = new (inputToken instanceof Token ? TokenAmount : CurrencyAmount)(inputToken, 100)

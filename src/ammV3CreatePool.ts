@@ -4,7 +4,6 @@ import Decimal from 'decimal.js';
 import {
   AmmV3,
   AmmV3ConfigInfo,
-  buildTransaction,
   ENDPOINT,
   Token,
 } from '@raydium-io/raydium-sdk';
@@ -15,12 +14,13 @@ import {
 
 import {
   connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
   PROGRAMIDS,
   RAYDIUM_MAINNET_API,
   wallet,
-  wantBuildTxVersion,
 } from '../config';
-import { sendTx } from './util';
+import { buildAndSendTx } from './util';
 
 type TestTxInputInfo = {
   baseToken: Token
@@ -61,6 +61,8 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
     ammConfig,
     initialPrice: input.startPoolPrice,
     startTime: input.startTime,
+    makeTxVersion,
+    payer: wallet.publicKey,
   })
 
   // -------- step 2: (optional) get mockPool info --------
@@ -75,22 +77,12 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
     startTime: input.startTime
   })
 
-  // -------- step 3: compose instructions to several transactions --------
-  const createPooltransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeCreatePoolInstruction.innerTransactions,
-  })
-
-  // -------- step 4: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, createPooltransactions)
-  return { txids, mockPoolInfo }
+  return { txids: await buildAndSendTx(makeCreatePoolInstruction.innerTransactions), mockPoolInfo }
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const baseToken = DEFAULT_TOKEN.USDC // USDC
+  const quoteToken = DEFAULT_TOKEN.RAY // RAY
   const ammV3ConfigId = 'E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'
   const startPoolPrice = new Decimal(1)
   const startTime = new BN(Math.floor(new Date().getTime() / 1000))

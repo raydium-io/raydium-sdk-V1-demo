@@ -1,7 +1,17 @@
-import { buildTransaction, MarketV2, Token } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, PROGRAMIDS, wallet, wantBuildTxVersion } from '../config'
-import { sendTx } from './util'
+import {
+  MarketV2,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  PROGRAMIDS,
+  wallet,
+} from '../config';
+import { buildAndSendTx } from './util';
 
 type TestTxInputInfo = {
   baseToken: Token
@@ -24,24 +34,15 @@ export async function createMarket(input: TestTxInputInfo) {
     lotSize: 1, // default 1
     tickSize: 0.01, // default 0.01
     dexProgramId: PROGRAMIDS.OPENBOOK_MARKET,
+    makeTxVersion,
   })
-
-  // -------- step 2: compose instructions to several transactions --------
-  const transactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: createMarketInstruments.innerTransactions,
-  })
-
-  // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
-  return { txids }
+  
+  return { txids: await buildAndSendTx(createMarketInstruments.innerTransactions) }
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
-  const quoteToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
+  const baseToken = DEFAULT_TOKEN.RAY // RAY
+  const quoteToken = DEFAULT_TOKEN.USDC // USDC
 
   createMarket({
     baseToken,

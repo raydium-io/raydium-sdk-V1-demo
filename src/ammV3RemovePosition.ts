@@ -1,14 +1,24 @@
+import assert from 'assert';
+import BN from 'bn.js';
+
 import {
   AmmV3,
   ApiAmmV3PoolsItem,
-  buildTransaction,
-  ENDPOINT
-} from '@raydium-io/raydium-sdk'
-import { Keypair } from '@solana/web3.js'
-import assert from 'assert'
-import BN from 'bn.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+  ENDPOINT,
+  ZERO,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -56,19 +66,12 @@ async function ammV3RemovePosition(input: TestTxInputInfo) {
     },
     liquidity: ammV3Position.liquidity.div(new BN(2)), //for close position, use 'ammV3Position.liquidity' without dividend
     // slippage: 1, // if encouter slippage check error, try uncomment this line and set a number manually
+    makeTxVersion,
+    amountMinA: ZERO,
+    amountMinB: ZERO
   })
 
-  // -------- step 3: create instructions by SDK function --------
-  const makeDecreaseLiquidityTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
-    innerTransactions: makeDecreaseLiquidityInstruction.innerTransactions,
-  })
-
-  // -------- step 4: send transaction --------
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeDecreaseLiquidityTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(makeDecreaseLiquidityInstruction.innerTransactions) }
 }
 
 async function howToUse() {

@@ -1,8 +1,26 @@
-import { AmmV3, ApiAmmV3PoolsItem, buildTransaction, ENDPOINT, Token, TokenAmount } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import Decimal from 'decimal.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+import Decimal from 'decimal.js';
+
+import {
+  AmmV3,
+  ApiAmmV3PoolsItem,
+  ENDPOINT,
+  fetchMultipleMintInfos,
+  Token,
+  TokenAmount,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -58,7 +76,7 @@ async function ammV3CreatePosition(input: TestTxInputInfo) {
   const isFocus1 = input.userCursorSide === 'base'
   const isCoin1Base = input.baseToken.mint.equals(ammV3Pool.state.mintA.mint)
   const isPairPoolDirectionEq = (isFocus1 && isCoin1Base) || (!isCoin1Base && !isFocus1)
-  const { liquidity } = AmmV3.getLiquidityAmountOutFromAmountIn({
+  const { liquidity, amountSlippageA, amountSlippageB } = AmmV3.getLiquidityAmountOutFromAmountIn({
     poolInfo: ammV3PoolInfo,
     slippage: 0,
     inputA: isPairPoolDirectionEq,
@@ -66,10 +84,15 @@ async function ammV3CreatePosition(input: TestTxInputInfo) {
     tickLower,
     amount: input.inputTokenAmount.raw,
     add: true, // SDK flag for math round direction
+
+    amountHasFee: true,
+
+    token2022Infos: await fetchMultipleMintInfos({ connection, mints: [ammV3PoolInfo.mintA.mint, ammV3PoolInfo.mintB.mint] }),
+    epochInfo: await connection.getEpochInfo(),
   })
 
   // -------- step 4: make open position instruction --------
-  const makeOpenPositionInstruction = await AmmV3.makeOpenPositionInstructionSimple({
+  const makeOpenPositionInstruction = await AmmV3.makeOpenPositionFromLiquidityInstructionSimple({
     connection,
     poolInfo: ammV3PoolInfo,
     ownerInfo: {
@@ -80,25 +103,17 @@ async function ammV3CreatePosition(input: TestTxInputInfo) {
     tickLower,
     tickUpper,
     liquidity,
-    slippage: 1,
+    makeTxVersion,
+    amountMaxA: amountSlippageA.amount,
+    amountMaxB: amountSlippageB.amount,
   })
 
-  // -------- step 5: compose instructions to several transactions --------
-  const makeOpenPositionTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeOpenPositionInstruction.innerTransactions,
-  })
-
-  // -------- step 6: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, makeOpenPositionTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(makeOpenPositionInstruction.innerTransactions) }
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const baseToken = DEFAULT_TOKEN.USDC // USDC
+  const quoteToken = DEFAULT_TOKEN.RAY // RAY
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
   const inputTokenAmount = new TokenAmount(quoteToken, 10000)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

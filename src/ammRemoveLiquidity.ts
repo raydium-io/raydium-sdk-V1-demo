@@ -1,16 +1,25 @@
+import assert from 'assert';
+
 import {
-  buildTransaction,
   ENDPOINT,
   jsonInfo2PoolKeys,
   Liquidity,
   LiquidityPoolKeys,
-  Token,
   TokenAmount,
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import assert from 'assert'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -46,23 +55,14 @@ async function ammRemoveLiquidity(input: TestTxInputInfo) {
       tokenAccounts: input.walletTokenAccounts,
     },
     amountIn: input.removeLpTokenAmount,
+    makeTxVersion,
   })
 
-  // -------- step 2: compose instructions to several transactions --------
-  const removeLiquidityInstructionTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: removeLiquidityInstructionResponse.innerTransactions,
-  })
-
-  // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, removeLiquidityInstructionTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(removeLiquidityInstructionResponse.innerTransactions) }
 }
 
 async function howToUse() {
-  const lpToken = new Token(new PublicKey('FGYXP4vBkMEtKhxrmEBcWN8VNmXX8qNgEJpENKDETZ4Y'), 6, 'RAY-USDC', 'RAY-USDC') // LP
+  const lpToken = DEFAULT_TOKEN['RAY_USDC-LP'] // LP
   const removeLpTokenAmount = new TokenAmount(lpToken, 100)
   const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

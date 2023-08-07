@@ -3,25 +3,23 @@ import assert from 'assert';
 import {
   AmmV3,
   ApiAmmV3PoolsItem,
-  buildTransaction,
   ENDPOINT,
+  fetchMultipleMintInfos,
   Token,
   TokenAmount,
 } from '@raydium-io/raydium-sdk';
-import {
-  Keypair,
-  PublicKey,
-} from '@solana/web3.js';
+import { Keypair } from '@solana/web3.js';
 
 import {
   connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
   RAYDIUM_MAINNET_API,
   wallet,
-  wantBuildTxVersion,
 } from '../config';
 import {
+  buildAndSendTx,
   getWalletTokenAccount,
-  sendTx,
 } from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
@@ -67,7 +65,7 @@ async function ammV3AddPosition(input: TestTxInputInfo): Promise<{ txids: string
   const isFocus1 = input.userCursorSide === 'base'
   const isCoin1Base = input.baseToken.mint.equals(ammV3Pool.state.mintA.mint)
   const isPairPoolDirectionEq = (isFocus1 && isCoin1Base) || (!isCoin1Base && !isFocus1)
-  const { liquidity } = AmmV3.getLiquidityAmountOutFromAmountIn({
+  const { liquidity, amountSlippageA, amountSlippageB } = AmmV3.getLiquidityAmountOutFromAmountIn({
     poolInfo: ammV3PoolInfo,
     slippage: 0,
     inputA: isPairPoolDirectionEq,
@@ -75,10 +73,13 @@ async function ammV3AddPosition(input: TestTxInputInfo): Promise<{ txids: string
     tickLower: ammV3Position.tickLower,
     amount: input.inputTokenAmount.raw,
     add: true, // SDK flag for math round direction
+    amountHasFee: true,
+    token2022Infos: await fetchMultipleMintInfos({ connection, mints: [ammV3PoolInfo.mintA.mint, ammV3PoolInfo.mintB.mint]}),
+    epochInfo: await connection.getEpochInfo()
   })
 
   // -------- step 3: create instructions by SDK function --------
-  const makeIncreaseLiquidityInstruction = await AmmV3.makeIncreaseLiquidityInstructionSimple({
+  const makeIncreaseLiquidityInstruction = await AmmV3.makeIncreasePositionFromLiquidityInstructionSimple({
     connection,
     poolInfo: ammV3PoolInfo,
     ownerPosition: ammV3Position,
@@ -88,28 +89,19 @@ async function ammV3AddPosition(input: TestTxInputInfo): Promise<{ txids: string
       tokenAccounts: input.walletTokenAccounts,
     },
     liquidity,
-    slippage: 1,
+    makeTxVersion,
+    amountMaxA: amountSlippageA.amount,
+    amountMaxB: amountSlippageB.amount,
   })
 
-  // -------- step 4: compose instructions to several transactions --------
-  const makeIncreaseLiquidityTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeIncreaseLiquidityInstruction.innerTransactions,
-  })
-
-  // -------- step 5: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, makeIncreaseLiquidityTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(makeIncreaseLiquidityInstruction.innerTransactions) }
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const baseToken = DEFAULT_TOKEN.USDC // USDC
+  const quoteToken = DEFAULT_TOKEN.RAY // RAY
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
-  const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
-  const inputTokenAmount = new TokenAmount(RAYToken, 10000)
+  const inputTokenAmount = new TokenAmount(DEFAULT_TOKEN.RAY, 10000)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const userCursorSide: 'base' | 'quote' = 'base'
 

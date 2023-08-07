@@ -2,28 +2,24 @@ import assert from 'assert';
 
 import {
   ApiFarmInfo,
-  buildTransaction,
   Farm,
   FarmPoolKeys,
   jsonInfo2PoolKeys,
-  Token,
   TokenAmount,
 } from '@raydium-io/raydium-sdk';
-import {
-  Keypair,
-  PublicKey,
-} from '@solana/web3.js';
+import { Keypair } from '@solana/web3.js';
 
 import {
   connection,
+  DEFAULT_TOKEN,
   ENDPOINT,
+  makeTxVersion,
   RAYDIUM_MAINNET_API,
   wallet,
-  wantBuildTxVersion,
 } from '../config';
 import {
+  buildAndSendTx,
   getWalletTokenAccount,
-  sendTx,
 } from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
@@ -69,24 +65,15 @@ async function stakeFarm(input: TestTxInputInfo) {
       tokenAccounts: input.walletTokenAccounts,
     },
     amount: input.inputTokenAmount.raw,
+    makeTxVersion,
   })
 
-  // -------- step 2: compose instructions to several transactions --------
-  const makeDepositTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeDepositInstruction.innerTransactions,
-  })
-
-  // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, makeDepositTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(makeDepositInstruction.innerTransactions) }
 }
 
 async function howToUse() {
   const targetFarm = 'CHYrUBX2RKX8iBg7gYTkccoGNBzP44LdaazMHCLcdEgS' // RAY-USDC farm
-  const lpToken = new Token(new PublicKey('FbC6K13MzHvN42bXrtGaWsvZY9fxrackRSZcBGfjPc7m'), 6, 'RAY-USDC', 'RAY-USDC')
+  const lpToken = DEFAULT_TOKEN['RAY_USDC-LP']
   const inputTokenAmount = new TokenAmount(lpToken, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 

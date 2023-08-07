@@ -1,10 +1,24 @@
-import Decimal from 'decimal.js'
+import Decimal from 'decimal.js';
 
-import { AmmV3, ApiAmmV3PoolsItem, buildTransaction, ENDPOINT, Token } from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
+import {
+  AmmV3,
+  ApiAmmV3PoolsItem,
+  ENDPOINT,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
 
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -48,30 +62,20 @@ async function ammV3SetPoolReward(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
-    rewardInfos: input.rewardInfos.map((r) => ({ ...r, mint: r.token.mint })),
+    rewardInfos: input.rewardInfos.map((r) => ({ ...r, mint: r.token.mint, programId: r.token.programId, })),
     chainTime: new Date().getTime() / 1000,
+    makeTxVersion,
   })
-
-  // -------- step 3: compose instructions to several transactions --------
-  const openPoolPositiontransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: wallet.publicKey,
-    innerTransactions: makeSetRewardsInstruction.innerTransactions,
-  })
-
-  // -------- step 4: send transactions --------
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, openPoolPositiontransactions)
-  return { txids }
+  
+  return { txids: await buildAndSendTx(makeSetRewardsInstruction.innerTransactions) }
 }
 
 async function howToUse() {
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
-  const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const rewardInfos = [
     {
-      token: RAYToken,
+      token: DEFAULT_TOKEN.RAY,
       openTime: 4073858467, // Wed Feb 04 2099 03:21:07 GMT+0000
       endTime: 4076277667, // Wed Mar 04 2099 03:21:07 GMT+0000
       perSecond: new Decimal(0.000001),

@@ -1,14 +1,24 @@
-import Decimal from 'decimal.js'
+import Decimal from 'decimal.js';
 
 import {
   AmmV3,
   ApiAmmV3PoolsItem,
-  buildTransaction,
-  ENDPOINT, Token
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+  ENDPOINT,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -44,27 +54,19 @@ async function ammV3InitPoolReward(input: TestTxInputInfo) {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
-    rewardInfos: input.rewardInfos.map((r) => ({ ...r, mint: r.token.mint })),
+    rewardInfos: input.rewardInfos.map((r) => ({ ...r, mint: r.token.mint, programId: r.token.programId, })),
+    makeTxVersion,
   })
-  // prepare transactions
-  const makeInitRewardsTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeInitRewardsInstruction.innerTransactions,
-  })
-
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, makeInitRewardsTransactions)
-  return { txids }
+  
+  return { txids: await buildAndSendTx(makeInitRewardsInstruction.innerTransactions) }
 }
 
 async function howToUse() {
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
-  const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const rewardInfos = [
     {
-      token: RAYToken,
+      token: DEFAULT_TOKEN.RAY,
       openTime: 4073858467, // Wed Feb 04 2099 03:21:07 GMT+0000
       endTime: 4076277667, // Wed Mar 04 2099 03:21:07 GMT+0000
       perSecond: new Decimal(0.000001),

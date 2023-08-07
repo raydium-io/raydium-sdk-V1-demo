@@ -1,15 +1,27 @@
+import assert from 'assert';
+
 import {
-  buildTransaction,
   jsonInfo2PoolKeys,
   Liquidity,
-  LiquidityPoolKeys, Percent,
+  LiquidityPoolKeys,
+  Percent,
   Token,
-  TokenAmount
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import assert from 'assert'
-import { connection, ENDPOINT, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+  TokenAmount,
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  ENDPOINT,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -55,24 +67,15 @@ async function swapOnlyAmm(input: TestTxInputInfo) {
     amountIn: input.inputTokenAmount,
     amountOut,
     fixedSide: 'in',
+    makeTxVersion,
   })
 
-  // -------- step 3: compose instructions to several transactions --------
-  const transactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: innerTransactions,
-  })
-
-  // -------- step 4: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
-  return { txids }
+  return { txids: await buildAndSendTx(innerTransactions) }
 }
 
 async function howToUse() {
-  const inputToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const outputToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const inputToken = DEFAULT_TOKEN.USDC // USDC
+  const outputToken = DEFAULT_TOKEN.RAY // RAY
   const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // USDC-RAY pool
   const inputTokenAmount = new TokenAmount(inputToken, 10000)
   const slippage = new Percent(1, 100)

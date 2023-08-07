@@ -1,18 +1,15 @@
-import {
-  buildTransaction,
-  Utils1216,
-} from '@raydium-io/raydium-sdk';
+import { Utils1216 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
 import {
   connection,
+  makeTxVersion,
   PROGRAMIDS,
   wallet,
-  wantBuildTxVersion,
 } from '../config';
 import {
+  buildAndSendTx,
   getWalletTokenAccount,
-  sendTx,
 } from './util';
 
 type TestTxInputInfo = {
@@ -47,6 +44,7 @@ export async function utils1216(input: TestTxInputInfo) {
       associatedOnly: true,
       checkCreateATAOwner: true,
     },
+    makeTxVersion,
   })
 
   // -------- step 1: create instructions by SDK function --------
@@ -59,19 +57,10 @@ export async function utils1216(input: TestTxInputInfo) {
       associatedOnly: true,
       checkCreateATAOwner: true,
     },
+    makeTxVersion,
   })
 
-  // -------- step 2: compose instructions to several transactions --------
-  const transactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: claimAll.innerTransactions,
-  })
-
-  // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, transactions)
-  return { txids }
+  return { txids: await buildAndSendTx(claimAll.innerTransactions) }
 }
 
 async function howToUse() {

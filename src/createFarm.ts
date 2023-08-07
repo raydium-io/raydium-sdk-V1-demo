@@ -1,14 +1,28 @@
+import assert from 'assert';
+
 import {
-  buildTransaction,
   ENDPOINT,
   Farm,
   LiquidityPoolJsonInfo,
-  MAINNET_PROGRAM_ID, Token
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import assert from 'assert'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+  MAINNET_PROGRAM_ID,
+  Token,
+} from '@raydium-io/raydium-sdk';
+import {
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -63,28 +77,18 @@ async function createFarm(input: TestTxInputInfo) {
       })),
       lockInfo: input.lockInfo,
     },
+    makeTxVersion,
   })
 
-  // -------- step 2: compose instructions to several transactions --------
-  const makeCreateFarmTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: makeCreateFarmInstruction.innerTransactions,
-  })
-
-  // -------- step 3: send transactions --------
-  const txids = await sendTx(connection, wallet, wantBuildTxVersion, makeCreateFarmTransactions)
-  return { txids }
+  return { txids: await buildAndSendTx(makeCreateFarmInstruction.innerTransactions) }
 }
 
 async function howToUse() {
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
-  const RAYToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY')
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const rewardInfos = [
     {
-      token: RAYToken,
+      token: DEFAULT_TOKEN.RAY,
       perSecond: 1,
       openTime: 4073858467, // Wed Feb 04 2099 03:21:07 GMT+0000
       endTime: 4076277667, // Wed Mar 04 2099 03:21:07 GMT+0000

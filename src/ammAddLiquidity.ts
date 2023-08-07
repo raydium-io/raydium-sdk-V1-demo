@@ -1,6 +1,6 @@
-import assert from 'assert'
+import assert from 'assert';
+
 import {
-  buildTransaction,
   CurrencyAmount,
   ENDPOINT,
   jsonInfo2PoolKeys,
@@ -9,10 +9,20 @@ import {
   Percent,
   Token,
   TokenAmount,
-} from '@raydium-io/raydium-sdk'
-import { Keypair, PublicKey } from '@solana/web3.js'
-import { connection, RAYDIUM_MAINNET_API, wallet, wantBuildTxVersion } from '../config'
-import { getWalletTokenAccount, sendTx } from './util'
+} from '@raydium-io/raydium-sdk';
+import { Keypair } from '@solana/web3.js';
+
+import {
+  connection,
+  DEFAULT_TOKEN,
+  makeTxVersion,
+  RAYDIUM_MAINNET_API,
+  wallet,
+} from '../config';
+import {
+  buildAndSendTx,
+  getWalletTokenAccount,
+} from './util';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -68,24 +78,15 @@ async function ammAddLiquidity(
     amountInA: input.inputTokenAmount,
     amountInB: maxAnotherAmount,
     fixedSide: 'a',
+    makeTxVersion,
   })
 
-  // -------- step 3: compose instructions to several transactions --------
-  const addLiquidityInstructionTransactions = await buildTransaction({
-    connection,
-    txType: wantBuildTxVersion,
-    payer: input.wallet.publicKey,
-    innerTransactions: addLiquidityInstructionResponse.innerTransactions,
-  })
-
-  // -------- step 4: send transactions --------
-  const txids = await sendTx(connection, input.wallet, wantBuildTxVersion, addLiquidityInstructionTransactions)
-  return { txids, anotherAmount }
+  return { txids: await buildAndSendTx(addLiquidityInstructionResponse.innerTransactions), anotherAmount }
 }
 
 async function howToUse() {
-  const baseToken = new Token(new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'), 6, 'USDC', 'USDC') // USDC
-  const quoteToken = new Token(new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY') // RAY
+  const baseToken = DEFAULT_TOKEN.USDC // USDC
+  const quoteToken = DEFAULT_TOKEN.RAY // RAY
   const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
   const inputTokenAmount = new TokenAmount(baseToken, 100)
   const slippage = new Percent(1, 100)
