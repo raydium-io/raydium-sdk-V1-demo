@@ -10,6 +10,8 @@ import {
   Keypair,
   PublicKey,
   SendOptions,
+  Signer,
+  Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
 
@@ -21,14 +23,18 @@ import {
 
 export async function sendTx(
   connection: Connection,
-  payer: Keypair,
-  txs: VersionedTransaction[],
+  payer: Keypair | Signer,
+  txs: (VersionedTransaction | Transaction)[],
   options?: SendOptions
 ): Promise<string[]> {
   const txids: string[] = [];
   for (const iTx of txs) {
-    (iTx as VersionedTransaction).sign([payer]);
-    txids.push(await connection.sendTransaction(iTx as VersionedTransaction, options));
+    if (iTx instanceof VersionedTransaction) {
+      iTx.sign([payer]);
+      txids.push(await connection.sendTransaction(iTx, options));
+    } else {
+      txids.push(await connection.sendTransaction(iTx, [payer], options));
+    }
   }
   return txids;
 }

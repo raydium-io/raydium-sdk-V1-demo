@@ -139,10 +139,10 @@ async function howToUse() {
     walletTokenAccounts,
     wallet,
 
-    feeConfig: {
-      feeBps: new BN(25),
-      feeAccount: Keypair.generate().publicKey // test
-    }
+    // feeConfig: {
+    //   feeBps: new BN(25),
+    //   feeAccount: Keypair.generate().publicKey // test
+    // }
   }).then(({ txids }) => {
     /** continue with txids */
     console.log('txids', txids)
