@@ -71,7 +71,7 @@ async function checkClmmPosition() {
       poolInfo.sqrtPriceX64,
       SqrtPriceMath.getSqrtPriceX64FromTick(position.tickLower),
       SqrtPriceMath.getSqrtPriceX64FromTick(position.tickUpper),
-      poolInfo.liquidity,
+      position.liquidity,
       false
     );
     const amountA = new Decimal(amounts.amountA.toString()).div(10 ** poolInfo.mintDecimalsA)
