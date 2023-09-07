@@ -2,8 +2,8 @@ import BN from 'bn.js';
 import Decimal from 'decimal.js';
 
 import {
-  AmmV3,
-  AmmV3ConfigInfo,
+  Clmm,
+  ClmmConfigInfo,
   ENDPOINT,
   Token,
 } from '@raydium-io/raydium-sdk';
@@ -25,7 +25,7 @@ import { buildAndSendTx } from './util';
 type TestTxInputInfo = {
   baseToken: Token
   quoteToken: Token
-  ammV3ConfigId: string
+  clmmConfigId: string
   wallet: Keypair
   startPoolPrice: Decimal
   startTime: BN
@@ -39,20 +39,20 @@ type TestTxInputInfo = {
  * step 3: compose instructions to several transactions
  * step 4: send transactions
  */
-async function ammV3CreatePool(input: TestTxInputInfo) {
+async function clmmCreatePool(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic ammConfig info --------
-  const ammConfigs = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Configs)).json()).data as Record<
+  const ammConfigs = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmConfigs)).json()).data as Record<
     string,
-    Omit<AmmV3ConfigInfo, 'id'> & { id: string }
+    Omit<ClmmConfigInfo, 'id'> & { id: string }
   >
-  const makePublickey = (config: Omit<AmmV3ConfigInfo, 'id'> & { id: string }): AmmV3ConfigInfo => ({
+  const makePublickey = (config: Omit<ClmmConfigInfo, 'id'> & { id: string }): ClmmConfigInfo => ({
     ...config,
     id: new PublicKey(config.id),
   })
-  const ammConfig = makePublickey(ammConfigs[input.ammV3ConfigId])
+  const ammConfig = makePublickey(ammConfigs[input.clmmConfigId])
 
   // -------- step 1: make create pool instructions --------
-  const makeCreatePoolInstruction = await AmmV3.makeCreatePoolInstructionSimple({
+  const makeCreatePoolInstruction = await Clmm.makeCreatePoolInstructionSimple({
     connection,
     programId: PROGRAMIDS.CLMM,
     owner: input.wallet.publicKey,
@@ -66,7 +66,7 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
   })
 
   // -------- step 2: (optional) get mockPool info --------
-  const mockPoolInfo = AmmV3.makeMockPoolInfo({
+  const mockPoolInfo = Clmm.makeMockPoolInfo({
     programId: PROGRAMIDS.CLMM,
     mint1: input.baseToken,
     mint2: input.quoteToken,
@@ -83,14 +83,14 @@ async function ammV3CreatePool(input: TestTxInputInfo) {
 async function howToUse() {
   const baseToken = DEFAULT_TOKEN.USDC // USDC
   const quoteToken = DEFAULT_TOKEN.RAY // RAY
-  const ammV3ConfigId = 'E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'
+  const clmmConfigId = 'E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'
   const startPoolPrice = new Decimal(1)
   const startTime = new BN(Math.floor(new Date().getTime() / 1000))
 
-  ammV3CreatePool({
+  clmmCreatePool({
     baseToken,
     quoteToken,
-    ammV3ConfigId,
+    clmmConfigId,
     wallet: wallet,
     startPoolPrice,
     startTime,

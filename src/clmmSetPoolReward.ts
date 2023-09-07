@@ -1,8 +1,8 @@
 import Decimal from 'decimal.js';
 
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   ENDPOINT,
   Token,
 } from '@raydium-io/raydium-sdk';
@@ -29,34 +29,33 @@ type TestTxInputInfo = {
 }
 
 /**
- * pre-action: fetch basic AmmV3 info
+ * pre-action: fetch basic clmm info
  *
- * step 1: ammV3 info
+ * step 1: clmm info
  * step 2: create set reward instructions
  * step 3: compose instructions to several transactions
  * step 4: send transactions
  */
-async function ammV3SetPoolReward(input: TestTxInputInfo) {
+async function clmmSetPoolReward(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const ammV3Pools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools).then((res) => res.json())).data
-  const ammV3Pool = ammV3Pools.find((pool: ApiAmmV3PoolsItem) => pool.id === input.targetPool)
+  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
+  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === input.targetPool)
 
-  // -------- step 1: ammV3 info  --------
-  const { [ammV3Pool.id]: sdkParsedAmmV3Info } = await AmmV3.fetchMultiplePoolInfos({
+  // -------- step 1: clmm info  --------
+  const { [clmmPool.id]: { state: clmmPoolInfo} } = await Clmm.fetchMultiplePoolInfos({
     connection,
-    poolKeys: [ammV3Pool],
+    poolKeys: [clmmPool],
     chainTime: new Date().getTime() / 1000,
     ownerInfo: {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
   })
-  const { state: ammV3PoolInfo } = sdkParsedAmmV3Info
 
   // -------- step 2: create set reward instructions --------
-  const makeSetRewardsInstruction = await AmmV3.makeSetRewardsInstructionSimple({
+  const makeSetRewardsInstruction = await Clmm.makeSetRewardsInstructionSimple({
     connection,
-    poolInfo: ammV3PoolInfo,
+    poolInfo: clmmPoolInfo,
     ownerInfo: {
       feePayer: input.wallet.publicKey,
       wallet: input.wallet.publicKey,
@@ -82,7 +81,7 @@ async function howToUse() {
     },
   ]
 
-  ammV3SetPoolReward({
+  clmmSetPoolReward({
     targetPool,
     walletTokenAccounts,
     wallet: wallet,

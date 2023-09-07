@@ -1,8 +1,8 @@
 import Decimal from 'decimal.js';
 
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   ENDPOINT,
   Token,
 } from '@raydium-io/raydium-sdk';
@@ -28,27 +28,26 @@ type TestTxInputInfo = {
   rewardInfos: { token: Token; openTime: number; endTime: number; perSecond: Decimal }[]
 }
 
-async function ammV3InitPoolReward(input: TestTxInputInfo) {
+async function clmmInitPoolReward(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const ammV3Pools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools).then((res) => res.json())).data
-  const ammV3Pool = ammV3Pools.find((pool: ApiAmmV3PoolsItem) => pool.id === input.targetPool)
+  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
+  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === input.targetPool)
 
-  // -------- step 1: ammV3 info and ammV3 position --------
-  const { [ammV3Pool.id]: sdkParsedAmmV3Info } = await AmmV3.fetchMultiplePoolInfos({
+  // -------- step 1: Clmm info and Clmm position --------
+  const { [clmmPool.id]: { state: poolInfo} } = await Clmm.fetchMultiplePoolInfos({
     connection,
-    poolKeys: [ammV3Pool],
+    poolKeys: [clmmPool],
     chainTime: new Date().getTime() / 1000,
     ownerInfo: {
       wallet: input.wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
   })
-  const { state: ammV3PoolInfo } = sdkParsedAmmV3Info
 
   // prepare instruction
-  const makeInitRewardsInstruction = await AmmV3.makeInitRewardsInstructionSimple({
+  const makeInitRewardsInstruction = await Clmm.makeInitRewardsInstructionSimple({
     connection,
-    poolInfo: ammV3PoolInfo,
+    poolInfo,
     ownerInfo: {
       feePayer: input.wallet.publicKey,
       wallet: input.wallet.publicKey,
@@ -73,7 +72,7 @@ async function howToUse() {
     },
   ]
 
-  ammV3InitPoolReward({
+  clmmInitPoolReward({
     targetPool,
     walletTokenAccounts,
     wallet: wallet,

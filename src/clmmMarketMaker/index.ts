@@ -1,6 +1,6 @@
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   ReturnTypeFetchMultiplePoolInfos,
   TokenAccount,
   TxVersion,
@@ -11,11 +11,12 @@ import cron from 'node-cron'
 import axios from 'axios'
 
 import { getUserTokenAccounts, TokenAccountInfo } from './tokenAccount'
-import { createPositionTx, closePositionTx } from './ammV3Tx'
+import { createPositionTx, closePositionTx } from './clmmTx'
 import bs58 from 'bs58'
 import BN from 'bn.js'
+import { ENDPOINT, RAYDIUM_MAINNET_API } from '../../config'
 
-// all ammv3 pools: https://api.raydium.io/v2/ammV3/ammPools
+// all clmm pools: https://api.raydium.io/v2/ammV3/ammPools
 // SOL-USDC pool id 2QdhepnKRTLjjSqPL1PtKNwqrUkoLee5Gqs8bvZhRdMv
 
 const commitment = 'confirmed'
@@ -26,7 +27,7 @@ const connection = new Connection('rpc node url', commitment)
 
 const owner = Keypair.fromSecretKey(bs58.decode(`your secret key here`))
 
-let cachedPools: ApiAmmV3PoolsItem[] = []
+let cachedPools: ApiClmmPoolsItem[] = []
 
 let accounts: TokenAccountInfo[] = []
 let accountsRawInfo: TokenAccount[] = []
@@ -35,15 +36,15 @@ let accountListenerId: number | undefined
 async function getPoolInfo(poolId: string): Promise<ReturnTypeFetchMultiplePoolInfos> {
   if (!poolId) return {}
   if (!cachedPools.length) {
-    const { data } = await axios.get<{ data: ApiAmmV3PoolsItem[] }>('https://api.raydium.io/v2/ammV3/ammPools')
+    const { data } = await axios.get<{ data: ApiClmmPoolsItem[] }>(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)
     cachedPools = data.data
   }
 
-  const { data } = await axios.get<{ chainTime: number; offset: number }>('https://api.raydium.io/v2/main/chain/time')
+  const { data } = await axios.get<{ chainTime: number; offset: number }>(ENDPOINT + RAYDIUM_MAINNET_API.time)
 
   const pool = cachedPools.find((p) => p.id === poolId)
   if (pool) {
-    return await AmmV3.fetchMultiplePoolInfos({
+    return await Clmm.fetchMultiplePoolInfos({
       poolKeys: [pool],
       connection,
       ownerInfo: { tokenAccounts: accountsRawInfo, wallet: owner.publicKey },

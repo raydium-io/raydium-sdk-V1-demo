@@ -1,4 +1,4 @@
-import { AmmV3, ENDPOINT } from '@raydium-io/raydium-sdk'
+import { Clmm, ENDPOINT } from '@raydium-io/raydium-sdk'
 import { Keypair } from '@solana/web3.js'
 
 import { connection, RAYDIUM_MAINNET_API, wallet } from '../config'
@@ -9,12 +9,12 @@ type TestTxInputInfo = {
   walletTokenAccounts: WalletTokenAccounts
   wallet: Keypair
 }
-async function ammV3OwnerPositionInfo(input: TestTxInputInfo) {
-  const ammV3Pool = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data
+async function clmmOwnerPositionInfo(input: TestTxInputInfo) {
+  const poolKeys = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data
 
-  const infos = await AmmV3.fetchMultiplePoolInfos({
+  const infos = await Clmm.fetchMultiplePoolInfos({
     connection,
-    poolKeys: ammV3Pool,
+    poolKeys,
     chainTime: new Date().getTime() / 1000,
     ownerInfo: {
       wallet: input.wallet.publicKey,
@@ -28,7 +28,7 @@ async function ammV3OwnerPositionInfo(input: TestTxInputInfo) {
 async function howToUse() {
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
-  ammV3OwnerPositionInfo({
+  clmmOwnerPositionInfo({
     walletTokenAccounts,
     wallet: wallet,
   }).then(({ infos }) => {

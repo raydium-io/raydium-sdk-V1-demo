@@ -1,6 +1,6 @@
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   fetchMultipleMintInfos,
   Percent,
   Token,
@@ -36,27 +36,27 @@ type TestTxInputInfo = {
 }
 
 async function swapOnlyCLMM(input: TestTxInputInfo) {
-  // -------- pre-action: fetch ammV3 pools info --------
-  const clmmPools: ApiAmmV3PoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data.filter(
-    (pool: ApiAmmV3PoolsItem) => pool.id === input.targetPool
+  // -------- pre-action: fetch Clmm pools info --------
+  const clmmPools: ApiClmmPoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data.filter(
+    (pool: ApiClmmPoolsItem) => pool.id === input.targetPool
   )
-  const { [input.targetPool]: ammV3PoolInfo } = await AmmV3.fetchMultiplePoolInfos({
+  const { [input.targetPool]: clmmPoolInfo } = await Clmm.fetchMultiplePoolInfos({
     connection,
     poolKeys: clmmPools,
     chainTime: new Date().getTime() / 1000,
   })
 
   // -------- step 1: fetch tick array --------
-  const tickCache = await AmmV3.fetchMultiplePoolTickArrays({
+  const tickCache = await Clmm.fetchMultiplePoolTickArrays({
     connection,
-    poolKeys: [ammV3PoolInfo.state],
+    poolKeys: [clmmPoolInfo.state],
     batchRequest: true,
   })
 
   // -------- step 2: calc amount out by SDK function --------
   // Configure input/output parameters, in this example, this token amount will swap 0.0001 USDC to RAY
-  const { minAmountOut, remainingAccounts } = AmmV3.computeAmountOutFormat({
-    poolInfo: ammV3PoolInfo.state,
+  const { minAmountOut, remainingAccounts } = Clmm.computeAmountOutFormat({
+    poolInfo: clmmPoolInfo.state,
     tickArrayCache: tickCache[input.targetPool],
     amountIn: input.inputTokenAmount,
     currencyOut: input.outputToken,
@@ -68,9 +68,9 @@ async function swapOnlyCLMM(input: TestTxInputInfo) {
   })
 
   // -------- step 3: create instructions by SDK function --------
-  const { innerTransactions } = await AmmV3.makeSwapBaseInInstructionSimple({
+  const { innerTransactions } = await Clmm.makeSwapBaseInInstructionSimple({
     connection,
-    poolInfo: ammV3PoolInfo.state,
+    poolInfo: clmmPoolInfo.state,
     ownerInfo: {
       feePayer: input.wallet.publicKey,
       wallet: input.wallet.publicKey,

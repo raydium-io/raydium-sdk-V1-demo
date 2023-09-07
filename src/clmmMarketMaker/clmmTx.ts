@@ -1,10 +1,10 @@
 import {
-  AmmV3,
-  AmmV3PoolInfo,
+  Clmm,
+  ClmmPoolInfo,
   fetchMultipleMintInfos,
   TokenAccount,
   TxVersion,
-  AmmV3PoolPersonalPosition,
+  ClmmPoolPersonalPosition,
 } from "@raydium-io/raydium-sdk";
 import Decimal from "decimal.js";
 import BN from "bn.js";
@@ -22,7 +22,7 @@ export async function createPositionTx({
   amountA,
 }: {
   connection: Connection;
-  poolInfo: AmmV3PoolInfo;
+  poolInfo: ClmmPoolInfo;
   priceLower: Decimal;
   priceUpper: Decimal;
   owner: Keypair | Signer;
@@ -30,19 +30,19 @@ export async function createPositionTx({
   makeTxVersion?: TxVersion;
   amountA: BN;
 }) {
-  const { tick: tickLower } = AmmV3.getPriceAndTick({
+  const { tick: tickLower } = Clmm.getPriceAndTick({
     poolInfo,
     baseIn: true,
     price: priceLower, // will add position start price
   });
-  const { tick: tickUpper } = AmmV3.getPriceAndTick({
+  const { tick: tickUpper } = Clmm.getPriceAndTick({
     poolInfo,
     baseIn: true,
     price: priceUpper, // will add position end price
   });
 
   const { liquidity, amountSlippageA, amountSlippageB } =
-    AmmV3.getLiquidityAmountOutFromAmountIn({
+    Clmm.getLiquidityAmountOutFromAmountIn({
       poolInfo,
       slippage: 0,
       inputA: true,
@@ -61,7 +61,7 @@ export async function createPositionTx({
     });
 
   const makeOpenPositionInstruction =
-    await AmmV3.makeOpenPositionFromLiquidityInstructionSimple({
+    await Clmm.makeOpenPositionFromLiquidityInstructionSimple({
       connection,
       poolInfo,
       ownerInfo: {
@@ -96,14 +96,14 @@ export async function closePositionTx({
   makeTxVersion = TxVersion.V0,
 }: {
   connection: Connection;
-  poolInfo: AmmV3PoolInfo;
-  position: AmmV3PoolPersonalPosition;
+  poolInfo: ClmmPoolInfo;
+  position: ClmmPoolPersonalPosition;
   owner: Keypair | Signer;
   tokenAccounts: TokenAccount[];
   makeTxVersion?: TxVersion;
 }) {
   const makeDecreaseLiquidityInstruction =
-    await AmmV3.makeDecreaseLiquidityInstructionSimple({
+    await Clmm.makeDecreaseLiquidityInstructionSimple({
       connection,
       poolInfo,
       ownerPosition: position,

@@ -2,8 +2,8 @@ import assert from 'assert';
 import BN from 'bn.js';
 
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   ENDPOINT,
   ZERO,
 } from '@raydium-io/raydium-sdk';
@@ -34,29 +34,29 @@ type TestTxInputInfo = {
  * step 3: create instructions by SDK function
  * step 4: send transaction
  */
-async function ammV3RemovePosition(input: TestTxInputInfo) {
+async function clmmRemovePosition(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const ammV3Pools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools).then((res) => res.json())).data
-  const ammV3Pool = ammV3Pools.find((pool: ApiAmmV3PoolsItem) => pool.id === input.targetPool)
+  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
+  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === input.targetPool)
 
   // -------- step 1: ammV3 info and ammV3 position --------
-  const { [ammV3Pool.id]: sdkParsedAmmV3Info } = await AmmV3.fetchMultiplePoolInfos({
+  const { [clmmPool.id]: sdkParsedAmmV3Info } = await Clmm.fetchMultiplePoolInfos({
     connection,
-    poolKeys: [ammV3Pool],
+    poolKeys: [clmmPool],
     chainTime: new Date().getTime() / 1000,
     ownerInfo: {
       wallet: wallet.publicKey,
       tokenAccounts: input.walletTokenAccounts,
     },
   })
-  const { state: ammV3PoolInfo, positionAccount } = sdkParsedAmmV3Info
+  const { state: clmmPoolInfo, positionAccount } = sdkParsedAmmV3Info
   assert(positionAccount && positionAccount.length, "position is not exist/is empty, so can't continue to add position")
   const ammV3Position = positionAccount[0] // assume first one is your target
 
   // -------- step 2: make ammV3 remove position instructions --------
-  const makeDecreaseLiquidityInstruction = await AmmV3.makeDecreaseLiquidityInstructionSimple({
+  const makeDecreaseLiquidityInstruction = await Clmm.makeDecreaseLiquidityInstructionSimple({
     connection,
-    poolInfo: ammV3PoolInfo,
+    poolInfo: clmmPoolInfo,
     ownerPosition: ammV3Position,
     ownerInfo: {
       feePayer: wallet.publicKey,
@@ -78,7 +78,7 @@ async function howToUse() {
   const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
-  ammV3RemovePosition({
+  clmmRemovePosition({
     targetPool,
     walletTokenAccounts,
     wallet: wallet,

@@ -1,8 +1,8 @@
 import {
   AmmConfigLayout,
-  ApiAmmV3ConfigItem,
-  ApiAmmV3PoolsItem,
-  ApiAmmV3PoolsItemStatistics,
+  ApiClmmConfigItem,
+  ApiClmmPoolsItem,
+  ApiClmmPoolsItemStatistics,
   PoolInfoLayout,
 } from '@raydium-io/raydium-sdk';
 import {
@@ -17,7 +17,7 @@ async function getMintProgram(mint: PublicKey) {
   if (account === null) throw Error(' get id info error ')
   return account.owner
 }
-async function getConfigInfo(configId: PublicKey): Promise<ApiAmmV3ConfigItem> {
+async function getConfigInfo(configId: PublicKey): Promise<ApiClmmConfigItem> {
   const account = await connection.getAccountInfo(configId)
   if (account === null) throw Error(' get id info error ')
   return formatConfigInfo(configId, account)
@@ -36,7 +36,7 @@ function formatConfigInfo(id: PublicKey, account: AccountInfo<Buffer>) {
     description: '',
   }
 }
-function getApiAmmV3PoolsItemStatistics(): ApiAmmV3PoolsItemStatistics {
+function getApiClmmPoolsItemStatistics(): ApiClmmPoolsItemStatistics {
   return {
     volume: 0,
     volumeFee: 0,
@@ -50,7 +50,7 @@ function getApiAmmV3PoolsItemStatistics(): ApiAmmV3PoolsItemStatistics {
   }
 }
 
-export async function formatClmmKeysFromId(id: string): Promise<ApiAmmV3PoolsItem> {
+export async function formatClmmKeysFromId(id: string): Promise<ApiClmmPoolsItem> {
   const account = await connection.getAccountInfo(new PublicKey(id))
   if (account === null) throw Error(' get id info error ')
   const info = PoolInfoLayout.decode(account.data)
@@ -75,9 +75,9 @@ export async function formatClmmKeysFromId(id: string): Promise<ApiAmmV3PoolsIte
         }))
     ),
     tvl: 0,
-    day: getApiAmmV3PoolsItemStatistics(),
-    week: getApiAmmV3PoolsItemStatistics(),
-    month: getApiAmmV3PoolsItemStatistics(),
+    day: getApiClmmPoolsItemStatistics(),
+    week: getApiClmmPoolsItemStatistics(),
+    month: getApiClmmPoolsItemStatistics(),
     lookupTableAccount: PublicKey.default.toBase58(),
   }
 }

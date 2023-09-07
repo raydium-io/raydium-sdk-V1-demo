@@ -1,8 +1,8 @@
 import BN from 'bn.js';
 
 import {
-  AmmV3,
-  ApiAmmV3PoolsItem,
+  Clmm,
+  ApiClmmPoolsItem,
   ApiPoolInfo,
   Currency,
   CurrencyAmount,
@@ -48,7 +48,7 @@ type TestTxInputInfo = {
 }
 
 /**
- * pre-action: fetch ammV3 pools info and ammV2 pools info
+ * pre-action: fetch Clmm pools info and ammV2 pools info
  * step 1: get all route
  * step 2: fetch tick array and pool info
  * step 3: calculation result of all route
@@ -57,10 +57,10 @@ type TestTxInputInfo = {
  * step 6: send transactions
  */
 async function routeSwap(input: TestTxInputInfo) {
-  // -------- pre-action: fetch ammV3 pools info and ammV2 pools info --------
-  const clmmPools: ApiAmmV3PoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.ammV3Pools)).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
-  const ammV3PoolInfos = Object.values(
-    await AmmV3.fetchMultiplePoolInfos({ connection, poolKeys: clmmPools, chainTime: new Date().getTime() / 1000 })
+  // -------- pre-action: fetch Clmm pools info and ammV2 pools info --------
+  const clmmPools: ApiClmmPoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
+  const clmmList = Object.values(
+    await Clmm.fetchMultiplePoolInfos({ connection, poolKeys: clmmPools, chainTime: new Date().getTime() / 1000 })
   ).map((i) => i.state)
 
   const sPool: ApiPoolInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
@@ -70,12 +70,12 @@ async function routeSwap(input: TestTxInputInfo) {
     inputMint: input.inputToken instanceof Token ? input.inputToken.mint : PublicKey.default,
     outputMint: input.outputToken instanceof Token ? input.outputToken.mint : PublicKey.default,
     apiPoolList: sPool,
-    ammV3List: ammV3PoolInfos,
+    clmmList,
   })
 
   // -------- step 2: fetch tick array and pool info --------
   const [tickCache, poolInfosCache] = await Promise.all([
-    await AmmV3.fetchMultiplePoolTickArrays({ connection, poolKeys: getRoute.needTickArray, batchRequest: true }),
+    await Clmm.fetchMultiplePoolTickArrays({ connection, poolKeys: getRoute.needTickArray, batchRequest: true }),
     await TradeV2.fetchMultipleInfo({ connection, pools: getRoute.needSimulate, batchRequest: true }),
   ])
 
