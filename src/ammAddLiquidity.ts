@@ -23,6 +23,7 @@ import {
   buildAndSendTx,
   getWalletTokenAccount,
 } from './util';
+import Decimal from 'decimal.js';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -58,12 +59,17 @@ async function ammAddLiquidity(
   // -------- step 1: compute another amount --------
   const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys
   const extraPoolInfo = await Liquidity.fetchInfo({ connection, poolKeys })
-  const { maxAnotherAmount, anotherAmount } = Liquidity.computeAnotherAmount({
+  const { maxAnotherAmount, anotherAmount, liquidity } = Liquidity.computeAnotherAmount({
     poolKeys,
     poolInfo: { ...targetPoolInfo, ...extraPoolInfo },
     amount: input.inputTokenAmount,
     anotherCurrency: input.quoteToken,
     slippage: input.slippage,
+  })
+
+  console.log('will add liquidity info', {
+    liquidity: liquidity.toString(), 
+    liquidityD: new Decimal(liquidity.toString()).div(10 ** extraPoolInfo.lpDecimals),
   })
 
   // -------- step 2: make instructions --------
