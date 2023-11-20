@@ -48,7 +48,7 @@ async function swapOnlyAmm(input: TestTxInputInfo) {
   const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys
 
   // -------- step 1: coumpute amount out --------
-  const { amountOut } = Liquidity.computeAmountOut({
+  const { amountOut, minAmountOut } = Liquidity.computeAmountOut({
     poolKeys: poolKeys,
     poolInfo: await Liquidity.fetchInfo({ connection, poolKeys }),
     amountIn: input.inputTokenAmount,
@@ -65,10 +65,12 @@ async function swapOnlyAmm(input: TestTxInputInfo) {
       owner: input.wallet.publicKey,
     },
     amountIn: input.inputTokenAmount,
-    amountOut,
+    amountOut: minAmountOut,
     fixedSide: 'in',
     makeTxVersion,
   })
+
+  console.log('amountOut:', amountOut.toFixed(), '  minAmountOut: ', minAmountOut.toFixed())
 
   return { txids: await buildAndSendTx(innerTransactions) }
 }

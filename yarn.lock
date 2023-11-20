@@ -205,10 +205,10 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@raydium-io/raydium-sdk@1.3.1-beta.28":
-  version "1.3.1-beta.28"
-  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.3.1-beta.28.tgz#3fadf86fc3f475589d5d6dd0345012677681c922"
-  integrity sha512-1fzdlZtiTM7I/biUy2k4kzJo5zIkgxQuGTdcBTgdPxTtHgoCnm8QxJ7h45Kz5zqfGgYcS3IdihV3uyX05at+QQ==
+"@raydium-io/raydium-sdk@1.3.1-beta.29":
+  version "1.3.1-beta.29"
+  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.3.1-beta.29.tgz#bc22b4b1c71cc45bfcca9ecb52a23a46668b627d"
+  integrity sha512-gMoa0zikDMNVpYu83H8OSmx9d3YCNc19EMG3nO67Ge8n20gOIueOnxGQVpLYg0gAzOby4FpQ+1bIGTswJ/IRRg==
   dependencies:
     "@solana/buffer-layout" "^4.0.1"
     "@solana/spl-token" "^0.3.8"
