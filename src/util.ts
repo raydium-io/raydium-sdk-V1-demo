@@ -17,6 +17,7 @@ import {
 } from '@solana/web3.js';
 
 import {
+  addLookupTableInfo,
   connection,
   makeTxVersion,
   wallet,
@@ -57,6 +58,7 @@ export async function buildAndSendTx(innerSimpleV0Transaction: InnerSimpleV0Tran
     makeTxVersion,
     payer: wallet.publicKey,
     innerTransactions: innerSimpleV0Transaction,
+    addLookupTableInfo: addLookupTableInfo,
   })
 
   return await sendTx(connection, wallet, willSendTx, options)

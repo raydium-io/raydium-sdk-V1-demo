@@ -205,10 +205,10 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@raydium-io/raydium-sdk@1.3.1-beta.32":
-  version "1.3.1-beta.32"
-  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.3.1-beta.32.tgz#9680108d0d87731dd51c524ef0be789f76a235d4"
-  integrity sha512-jYLVIzLnSxwutqHW+3cJwmbx/HUgQ0bKVvYMfgMzWOKvrjQF4wz07oI4eqfRju2KnDNfIf8Lz6l/1YbyBHR2wg==
+"@raydium-io/raydium-sdk@1.3.1-beta.37":
+  version "1.3.1-beta.37"
+  resolved "https://registry.yarnpkg.com/@raydium-io/raydium-sdk/-/raydium-sdk-1.3.1-beta.37.tgz#952cc83b0cc7fa68afbfaa627adc588273364ea1"
+  integrity sha512-LrQ8+c7BfTrKEgXnK99m4W+kkQ1ugqwFfPYq7ewg/RqbPi/9VpV5UudbIAr/AzTS6sCtNf/Z6A5kAL4t407oIA==
   dependencies:
     "@solana/buffer-layout" "^4.0.1"
     "@solana/spl-token" "^0.3.9"
@@ -1934,10 +1934,10 @@ npm-bundled@^3.0.0:
   dependencies:
     npm-normalize-package-bin "^3.0.0"
 
-npm-check-updates@^16.14.6:
-  version "16.14.6"
-  resolved "https://registry.yarnpkg.com/npm-check-updates/-/npm-check-updates-16.14.6.tgz#8a1b743398795e66b427ac31f9a73fe2704045d6"
-  integrity sha512-sJ6w4AmSDP7YzBXah94Ul2JhiIbjBDfx9XYgib15um2wtiQkOyjE7Lov3MNUSQ84Ry7T81mE4ynMbl/mGbK4HQ==
+npm-check-updates@^16.14.11:
+  version "16.14.11"
+  resolved "https://registry.yarnpkg.com/npm-check-updates/-/npm-check-updates-16.14.11.tgz#aef5248d04cc5abdf6ee2e1edc4a3f7fd20e6f29"
+  integrity sha512-0MMWGbGci22Pu77bR9jRsy5qgxdQSJVqNtSyyFeubDPtbcU36z4gjEDITu26PMabFWPNkAoVfKF31M3uKUvzFg==
   dependencies:
     chalk "^5.3.0"
     cli-table3 "^0.6.3"
@@ -2665,10 +2665,10 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
-typescript@^5.2.2:
-  version "5.2.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.2.2.tgz#5ebb5e5a5b75f085f22bc3f8460fba308310fa78"
-  integrity sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==
+typescript@^5.3.3:
+  version "5.3.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.3.3.tgz#b3ce6ba258e72e6305ba66f5c9b452aaee3ffe37"
+  integrity sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==
 
 unique-filename@^2.0.0:
   version "2.0.1"

@@ -1,6 +1,7 @@
 import {
   ENDPOINT as _ENDPOINT,
   Currency,
+  LOOKUP_TABLE_CACHE,
   MAINNET_PROGRAM_ID,
   RAYDIUM_MAINNET,
   Token,
@@ -24,6 +25,8 @@ export const ENDPOINT = _ENDPOINT;
 export const RAYDIUM_MAINNET_API = RAYDIUM_MAINNET;
 
 export const makeTxVersion = TxVersion.V0; // LEGACY
+
+export const addLookupTableInfo = LOOKUP_TABLE_CACHE // only mainnet. other = undefined
 
 export const DEFAULT_TOKEN = {
   'SOL': new Currency(9, 'USDC', 'USDC'),

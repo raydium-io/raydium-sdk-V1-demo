@@ -14,6 +14,7 @@ import {
   Transaction,
   SendOptions,
 } from "@solana/web3.js";
+import { addLookupTableInfo } from "../../config";
 
 interface SolanaFeeInfo {
   min: number;
@@ -79,6 +80,7 @@ export async function buildAndSendTx({
     makeTxVersion,
     payer: owner.publicKey,
     innerTransactions: innerSimpleV0Transaction,
+    addLookupTableInfo: addLookupTableInfo,
   });
 
   return await sendTx(connection, owner, willSendTx);
