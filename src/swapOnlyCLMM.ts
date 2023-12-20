@@ -65,6 +65,7 @@ async function swapOnlyCLMM(input: TestTxInputInfo) {
     token2022Infos: await fetchMultipleMintInfos({connection, mints: [
       ...clmmPools.map(i => [{mint: i.mintA, program: i.mintProgramIdA}, {mint: i.mintB, program: i.mintProgramIdB}]).flat().filter(i => i.program === TOKEN_2022_PROGRAM_ID.toString()).map(i => new PublicKey(i.mint)),
     ]}),
+    catchLiquidityInsufficient: false,
   })
 
   // -------- step 3: create instructions by SDK function --------

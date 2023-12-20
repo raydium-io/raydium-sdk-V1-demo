@@ -58,6 +58,7 @@ async function getOutOfRangePositionOutAmount() {
 
     token2022Infos,
     epochInfo,
+    amountAddFee: false,
   })
 
   const amountUpper = Clmm.getAmountsFromLiquidity({
@@ -70,6 +71,7 @@ async function getOutOfRangePositionOutAmount() {
 
     token2022Infos,
     epochInfo,
+    amountAddFee: false
   })
 
 
