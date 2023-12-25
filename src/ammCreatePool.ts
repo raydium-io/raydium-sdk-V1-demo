@@ -91,6 +91,7 @@ async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] 
     associatedOnly: false,
     checkCreateATAOwner: true,
     makeTxVersion,
+    feeDestinationId: new PublicKey('7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'), // only mainnet use this
   })
 
   return { txids: await buildAndSendTx(initPoolInstructionResponse.innerTransactions) }
