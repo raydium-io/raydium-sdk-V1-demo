@@ -3,18 +3,16 @@ import BN from 'bn.js';
 
 import {
   Clmm,
-  ApiClmmPoolsItem,
-  ENDPOINT,
-  ZERO,
+  ZERO
 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
 import {
   connection,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmKeysById } from './formatClmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -27,17 +25,9 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * pre-action: fetch basic info
- * step 1: ammV3 info and ammV3 position
- * step 2: make ammV3 remove position instructions
- * step 3: create instructions by SDK function
- * step 4: send transaction
- */
 async function clmmRemovePosition(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
-  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === input.targetPool)
+  const clmmPool = await formatClmmKeysById(input.targetPool)
 
   // -------- step 1: ammV3 info and ammV3 position --------
   const { [clmmPool.id]: sdkParsedAmmV3Info } = await Clmm.fetchMultiplePoolInfos({

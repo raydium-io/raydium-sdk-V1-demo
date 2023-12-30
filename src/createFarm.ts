@@ -1,11 +1,9 @@
 import assert from 'assert';
 
 import {
-  ENDPOINT,
   Farm,
-  LiquidityPoolJsonInfo,
   MAINNET_PROGRAM_ID,
-  Token,
+  Token
 } from '@raydium-io/raydium-sdk';
 import {
   Keypair,
@@ -16,9 +14,9 @@ import {
   connection,
   DEFAULT_TOKEN,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatAmmKeysById } from './formatAmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -42,19 +40,9 @@ type TestTxInputInfo = {
   }
 }
 
-/**
- * pre-action: fetch basic AmmV3 info
- *
- * step 1: create instructions by SDK function
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 async function createFarm(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
-  const targetPoolInfo = [...ammPool.official, ...ammPool.unOfficial].find(
-    (info) => info.id === input.targetPool
-  ) as LiquidityPoolJsonInfo
+  const targetPoolInfo = await formatAmmKeysById(input.targetPool)
   assert(targetPoolInfo, 'cannot find the target pool')
 
   // -------- step 1: create instructions by SDK function --------

@@ -1,7 +1,8 @@
-import { Clmm, ENDPOINT } from '@raydium-io/raydium-sdk'
+import { Clmm } from '@raydium-io/raydium-sdk'
 import { Keypair } from '@solana/web3.js'
 
-import { connection, RAYDIUM_MAINNET_API, wallet } from '../config'
+import { connection, PROGRAMIDS, wallet } from '../config'
+import { formatClmmKeys } from './formatClmmKeys'
 import { getWalletTokenAccount } from './util'
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
@@ -10,7 +11,7 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 async function clmmOwnerPositionInfo(input: TestTxInputInfo) {
-  const poolKeys = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data
+  const poolKeys = await formatClmmKeys(PROGRAMIDS.CLMM.toString())
 
   const infos = await Clmm.fetchMultiplePoolInfos({
     connection,

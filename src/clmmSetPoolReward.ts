@@ -2,9 +2,7 @@ import Decimal from 'decimal.js';
 
 import {
   Clmm,
-  ApiClmmPoolsItem,
-  ENDPOINT,
-  Token,
+  Token
 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
@@ -12,9 +10,9 @@ import {
   connection,
   DEFAULT_TOKEN,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmKeysById } from './formatClmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -28,21 +26,12 @@ type TestTxInputInfo = {
   rewardInfos: { token: Token; openTime: number; endTime: number; perSecond: Decimal }[]
 }
 
-/**
- * pre-action: fetch basic clmm info
- *
- * step 1: clmm info
- * step 2: create set reward instructions
- * step 3: compose instructions to several transactions
- * step 4: send transactions
- */
 async function clmmSetPoolReward(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
-  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === input.targetPool)
+  const clmmPool = await formatClmmKeysById(input.targetPool)
 
   // -------- step 1: clmm info  --------
-  const { [clmmPool.id]: { state: clmmPoolInfo} } = await Clmm.fetchMultiplePoolInfos({
+  const { [clmmPool.id]: { state: clmmPoolInfo } } = await Clmm.fetchMultiplePoolInfos({
     connection,
     poolKeys: [clmmPool],
     chainTime: new Date().getTime() / 1000,
@@ -65,7 +54,7 @@ async function clmmSetPoolReward(input: TestTxInputInfo) {
     chainTime: new Date().getTime() / 1000,
     makeTxVersion,
   })
-  
+
   return { txids: await buildAndSendTx(makeSetRewardsInstruction.innerTransactions) }
 }
 

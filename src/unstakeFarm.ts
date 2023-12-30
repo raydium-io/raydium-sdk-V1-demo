@@ -30,13 +30,6 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * pre-action: fetch farm info
- * step 1: Fetch farm pool info
- * step 2: create instructions by SDK function
- * step 3: compose instructions to several transactions
- * step 4: send transactions
- */
 async function unstakeFarm(input: TestTxInputInfo) {
   // -------- pre-action: fetch farm info --------
   const farmPool: ApiFarmInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.farmInfo)).json()
@@ -67,7 +60,7 @@ async function unstakeFarm(input: TestTxInputInfo) {
     amount: input.inputTokenAmount.raw,
     makeTxVersion,
   })
-  
+
   return { txids: await buildAndSendTx(makeWithdrawInstruction.innerTransactions) }
 }
 

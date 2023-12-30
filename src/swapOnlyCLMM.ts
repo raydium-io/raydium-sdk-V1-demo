@@ -1,6 +1,6 @@
 import {
-  Clmm,
   ApiClmmPoolsItem,
+  Clmm,
   fetchMultipleMintInfos,
   Percent,
   Token,
@@ -15,11 +15,10 @@ import {
 import {
   connection,
   DEFAULT_TOKEN,
-  ENDPOINT,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmKeysById } from './formatClmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -37,9 +36,7 @@ type TestTxInputInfo = {
 
 async function swapOnlyCLMM(input: TestTxInputInfo) {
   // -------- pre-action: fetch Clmm pools info --------
-  const clmmPools: ApiClmmPoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data.filter(
-    (pool: ApiClmmPoolsItem) => pool.id === input.targetPool
-  )
+  const clmmPools: ApiClmmPoolsItem[] = [await formatClmmKeysById(input.targetPool)]
   const { [input.targetPool]: clmmPoolInfo } = await Clmm.fetchMultiplePoolInfos({
     connection,
     poolKeys: clmmPools,
@@ -62,9 +59,11 @@ async function swapOnlyCLMM(input: TestTxInputInfo) {
     currencyOut: input.outputToken,
     slippage: input.slippage,
     epochInfo: await connection.getEpochInfo(),
-    token2022Infos: await fetchMultipleMintInfos({connection, mints: [
-      ...clmmPools.map(i => [{mint: i.mintA, program: i.mintProgramIdA}, {mint: i.mintB, program: i.mintProgramIdB}]).flat().filter(i => i.program === TOKEN_2022_PROGRAM_ID.toString()).map(i => new PublicKey(i.mint)),
-    ]}),
+    token2022Infos: await fetchMultipleMintInfos({
+      connection, mints: [
+        ...clmmPools.map(i => [{ mint: i.mintA, program: i.mintProgramIdA }, { mint: i.mintB, program: i.mintProgramIdB }]).flat().filter(i => i.program === TOKEN_2022_PROGRAM_ID.toString()).map(i => new PublicKey(i.mint)),
+      ]
+    }),
     catchLiquidityInsufficient: false,
   })
 

@@ -36,15 +36,15 @@ async function checkClmmPosition() {
   const gPA = await connection.getProgramAccounts(PROGRAMIDS.CLMM, {
     commitment: "confirmed",
     filters: [
-      {dataSize: PositionInfoLayout.span},
-      {memcmp: {bytes: poolId.toBase58(), offset: PositionInfoLayout.offsetOf('poolId')}},
+      { dataSize: PositionInfoLayout.span },
+      { memcmp: { bytes: poolId.toBase58(), offset: PositionInfoLayout.offsetOf('poolId') } },
     ]
   });
 
   const poolRewardMint = poolInfo.rewardInfos.map(i => i.tokenMint)
   const poolRewardMintAccount = await connection.getMultipleAccountsInfo(poolRewardMint)
   const poolRewardMintDecimals = []
-  for (let i = 0 ; i < 3; i ++) {
+  for (let i = 0; i < 3; i++) {
     const mint = poolRewardMint[i].toString()
     const account = poolRewardMintAccount[i]
     if (mint.toString() === PublicKey.default.toString()) {
@@ -119,10 +119,10 @@ async function checkClmmPosition() {
     const rewardInfos = PositionUtils.GetPositionRewards({
       tickCurrent: poolInfo.tickCurrent,
       // @ts-ignore
-      rewardInfos: poolInfo.rewardInfos.map((i: any) => ({rewardGrowthGlobalX64: new BN(i.rewardGrowthGlobalX64)}))
+      rewardInfos: poolInfo.rewardInfos.map((i: any) => ({ rewardGrowthGlobalX64: new BN(i.rewardGrowthGlobalX64) }))
     }, {
       liquidity: new BN(position.liquidity),
-      rewardInfos: position.rewardInfos.map((i: any) => ({growthInsideLastX64: new BN(i.growthInsideLastX64), rewardAmountOwed: new BN(i.rewardAmountOwed)}))
+      rewardInfos: position.rewardInfos.map((i: any) => ({ growthInsideLastX64: new BN(i.growthInsideLastX64), rewardAmountOwed: new BN(i.rewardAmountOwed) }))
     }, tickLowerState, tickUpperState)
 
     console.log(
@@ -143,13 +143,13 @@ async function checkClmmPosition() {
   console.log("check sum:", checkSumLiquidity.eq(poolInfo.liquidity));
 }
 
-function checkPositionStatus(poolInfo: {tickCurrent: number}, position: {tickLower: number, tickUpper: number}) {
+function checkPositionStatus(poolInfo: { tickCurrent: number }, position: { tickLower: number, tickUpper: number }) {
   if (position.tickUpper <= poolInfo.tickCurrent) return "OutOfRange(PriceIsAboveRange)";
-  if (position.tickLower >  poolInfo.tickCurrent) return "OutOfRange(PriceIsBelowRange)";
+  if (position.tickLower > poolInfo.tickCurrent) return "OutOfRange(PriceIsBelowRange)";
   return "InRange";
 }
 
-async function findNftOwner(mint: PublicKey): Promise<PublicKey|null> {
+async function findNftOwner(mint: PublicKey): Promise<PublicKey | null> {
   const res = await connection.getTokenLargestAccounts(mint);
   if (!res.value) return null;
   if (res.value.length === 0) return null;
@@ -157,11 +157,11 @@ async function findNftOwner(mint: PublicKey): Promise<PublicKey|null> {
 
   const account = await connection.getAccountInfo(res.value[0].address)
   const info = SPL_ACCOUNT_LAYOUT.decode(account?.data!)
-  
+
   return info.owner
 }
 
-const _tempCache: {[address: string]: {ticks: {[key: number]: Tick}}} = {}
+const _tempCache: { [address: string]: { ticks: { [key: number]: Tick } } } = {}
 async function getAndCacheTick(connection: Connection, address: PublicKey) {
   if (_tempCache[address.toString()] !== undefined) return _tempCache[address.toString()]
   const account = await connection.getAccountInfo(address)
@@ -171,7 +171,7 @@ async function getAndCacheTick(connection: Connection, address: PublicKey) {
   const _d = TickArrayLayout.decode(account.data)
 
   _tempCache[address.toString()] = _d
-  
+
   return _d
 }
 

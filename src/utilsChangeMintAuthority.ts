@@ -9,20 +9,22 @@ import { wallet } from '../config';
 import { buildAndSendTx } from './util';
 
 (async () => {
-  console.log({ txids: await buildAndSendTx([
-    {
-      instructionTypes: [
-        InstructionType.test,
-      ],
-      instructions: [
-        createSetAuthorityInstruction(
-          new PublicKey(' mint address '),
-          wallet.publicKey,
-          AuthorityType.FreezeAccount,
-          null // if will delete , change -> new PublicKey(' new authority address ')
-        )
-      ],
-      signers: [],
-    }
-  ]) })
+  console.log({
+    txids: await buildAndSendTx([
+      {
+        instructionTypes: [
+          InstructionType.test,
+        ],
+        instructions: [
+          createSetAuthorityInstruction(
+            new PublicKey(' mint address '),
+            wallet.publicKey,
+            AuthorityType.FreezeAccount,
+            null // if will delete , change -> new PublicKey(' new authority address ')
+          )
+        ],
+        signers: [],
+      }
+    ])
+  })
 })()

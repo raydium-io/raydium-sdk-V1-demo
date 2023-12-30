@@ -4,8 +4,7 @@ import Decimal from 'decimal.js';
 import {
   Clmm,
   ClmmConfigInfo,
-  ENDPOINT,
-  Token,
+  Token
 } from '@raydium-io/raydium-sdk';
 import {
   Keypair,
@@ -17,9 +16,9 @@ import {
   DEFAULT_TOKEN,
   makeTxVersion,
   PROGRAMIDS,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmConfigs } from './formatClmmConfigs';
 import { buildAndSendTx } from './util';
 
 type TestTxInputInfo = {
@@ -31,25 +30,10 @@ type TestTxInputInfo = {
   startTime: BN
 }
 
-/**
- * pre-action: fetch basic ammConfig info
- *
- * step 1: make create pool instructions
- * step 2: (optional) get mockPool info
- * step 3: compose instructions to several transactions
- * step 4: send transactions
- */
 async function clmmCreatePool(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic ammConfig info --------
-  const ammConfigs = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmConfigs)).json()).data as Record<
-    string,
-    Omit<ClmmConfigInfo, 'id'> & { id: string }
-  >
-  const makePublickey = (config: Omit<ClmmConfigInfo, 'id'> & { id: string }): ClmmConfigInfo => ({
-    ...config,
-    id: new PublicKey(config.id),
-  })
-  const ammConfig = makePublickey(ammConfigs[input.clmmConfigId])
+  const _ammConfig = (await formatClmmConfigs(PROGRAMIDS.CLMM.toString()))[input.clmmConfigId]
+  const ammConfig: ClmmConfigInfo = { ..._ammConfig, id: new PublicKey(_ammConfig.id) }
 
   // -------- step 1: make create pool instructions --------
   const makeCreatePoolInstruction = await Clmm.makeCreatePoolInstructionSimple({

@@ -1,11 +1,10 @@
 import assert from 'assert';
 
 import {
-  ENDPOINT,
   jsonInfo2PoolKeys,
   Liquidity,
   LiquidityPoolKeys,
-  TokenAmount,
+  TokenAmount
 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
@@ -13,9 +12,9 @@ import {
   connection,
   DEFAULT_TOKEN,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatAmmKeysById } from './formatAmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -29,19 +28,9 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * pre-action: fetch basic AmmV2 info
- * step 1: create instructions by SDK function
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 async function ammRemoveLiquidity(input: TestTxInputInfo) {
   // -------- pre-action: fetch basic info --------
-  const ammV2PoolData = await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).then((res) => res.json())
-  assert(ammV2PoolData, 'fetch failed')
-  const targetPoolInfo = [...ammV2PoolData.official, ...ammV2PoolData.unOfficial].find(
-    (poolInfo) => poolInfo.id === input.targetPool
-  )
+  const targetPoolInfo = await formatAmmKeysById(input.targetPool)
   assert(targetPoolInfo, 'cannot find the target pool')
 
   // -------- step 1: make instructions --------

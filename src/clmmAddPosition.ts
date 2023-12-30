@@ -2,28 +2,23 @@ import assert from 'assert';
 
 import {
   Clmm,
-  ApiClmmPoolsItem,
-  ENDPOINT,
-  fetchMultipleMintInfos,
-  Token,
-  TokenAmount,
+  fetchMultipleMintInfos
 } from '@raydium-io/raydium-sdk';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
+import { BN } from 'bn.js';
+import Decimal from 'decimal.js';
 import {
   connection,
-  DEFAULT_TOKEN,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmKeysById } from './formatClmmKeysById';
+import { _d } from './getOutOfRangePositionOutAmount';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
 } from './util';
-import Decimal from 'decimal.js';
-import { BN } from 'bn.js';
-import { _d } from './getOutOfRangePositionOutAmount';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -37,19 +32,9 @@ type TestTxInputInfo = {
   positionMint: PublicKey
 }
 
-/**
- * pre-action: fetch basic Clmm info
- *
- * step 1: Clmm info and Clmm position
- * step 2: calculate liquidity
- * step 3: create instructions by SDK function
- * step 4: compose instructions to several transactions
- * step 5: send transactions
- */
 async function clmmAddPosition({ targetPool, inputTokenAmount, inputTokenMint, wallet, walletTokenAccounts, slippage, positionMint}: TestTxInputInfo): Promise<{ txids: string[] }> {
   // -------- pre-action: fetch basic info --------
-  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
-  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === targetPool)
+  const clmmPool = await formatClmmKeysById(targetPool)
 
   // -------- step 1: Clmm info and Clmm position --------
   const { [clmmPool.id]: { state: poolInfo, positionAccount } } = await Clmm.fetchMultiplePoolInfos({

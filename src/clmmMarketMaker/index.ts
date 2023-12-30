@@ -1,22 +1,18 @@
 import {
-  Clmm,
   ApiClmmPoolsItem,
+  Clmm,
   ReturnTypeFetchMultiplePoolInfos,
-  TokenAccount,
-  TxVersion,
+  TokenAccount
 } from '@raydium-io/raydium-sdk'
 import { Connection, Keypair } from '@solana/web3.js'
 
 import cron from 'node-cron'
-import axios from 'axios'
 
-import { getUserTokenAccounts, TokenAccountInfo } from './tokenAccount'
-import { createPositionTx, closePositionTx } from './clmmTx'
 import bs58 from 'bs58'
-import BN from 'bn.js'
-import { ENDPOINT, RAYDIUM_MAINNET_API } from '../../config'
+import { PROGRAMIDS } from '../../config'
+import { formatClmmKeys } from '../formatClmmKeys'
+import { getUserTokenAccounts, TokenAccountInfo } from './tokenAccount'
 
-// all clmm pools: https://api.raydium.io/v2/ammV3/ammPools
 // SOL-USDC pool id 2QdhepnKRTLjjSqPL1PtKNwqrUkoLee5Gqs8bvZhRdMv
 
 const commitment = 'confirmed'
@@ -36,11 +32,9 @@ let accountListenerId: number | undefined
 async function getPoolInfo(poolId: string): Promise<ReturnTypeFetchMultiplePoolInfos> {
   if (!poolId) return {}
   if (!cachedPools.length) {
-    const { data } = await axios.get<{ data: ApiClmmPoolsItem[] }>(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)
-    cachedPools = data.data
+    cachedPools = await formatClmmKeys(PROGRAMIDS.CLMM.toString(), true)
   }
 
-  const { data } = await axios.get<{ chainTime: number; offset: number }>(ENDPOINT + RAYDIUM_MAINNET_API.time)
 
   const pool = cachedPools.find((p) => p.id === poolId)
   if (pool) {
@@ -48,7 +42,7 @@ async function getPoolInfo(poolId: string): Promise<ReturnTypeFetchMultiplePoolI
       poolKeys: [pool],
       connection,
       ownerInfo: { tokenAccounts: accountsRawInfo, wallet: owner.publicKey },
-      chainTime: (Date.now() + (data.offset || 0 * 1000)) / 1000,
+      chainTime: Date.now() / 1000,
       batchRequest: true,
     })
   }

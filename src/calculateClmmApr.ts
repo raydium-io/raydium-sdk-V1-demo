@@ -1,7 +1,8 @@
 import { ApiClmmPoolsItem, MathUtil, PoolInfoLayout } from "@raydium-io/raydium-sdk"
 import { ParsedAccountData, PublicKey } from "@solana/web3.js"
 import Decimal from "decimal.js"
-import { ENDPOINT, RAYDIUM_MAINNET_API, connection } from "../config"
+import { ENDPOINT, PROGRAMIDS, RAYDIUM_MAINNET_API, connection } from "../config"
+import { formatClmmKeys } from "./formatClmmKeys"
 
 
 async function calculateClmmApr() {
@@ -15,7 +16,7 @@ async function calculateClmmApr() {
   for (const [mint, price] of Object.entries(await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.price)).json()) as [string, number][]) mintPrice[mint] = price
 
   const poolApiInfo: { [poolId: string]: ApiClmmPoolsItem } = {}
-  for (const item of (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data) poolApiInfo[item.id] = item
+  for (const item of await formatClmmKeys(PROGRAMIDS.CLMM.toString(), true)) poolApiInfo[item.id] = item
 
   const apiPoolInfo = poolApiInfo[poolId]
   if (apiPoolInfo === undefined) throw Error('api pool info check error')

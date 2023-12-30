@@ -1,19 +1,18 @@
 import {
   ComputeBudgetConfig,
-  buildSimpleTransaction,
   InnerSimpleV0Transaction,
   TxVersion,
+  buildSimpleTransaction,
 } from "@raydium-io/raydium-sdk";
-import axios from "axios";
 import {
   Connection,
-  PublicKey,
   Keypair,
-  Signer,
-  VersionedTransaction,
-  Transaction,
   SendOptions,
+  Signer,
+  Transaction,
+  VersionedTransaction
 } from "@solana/web3.js";
+import axios from "axios";
 import { addLookupTableInfo } from "../../config";
 
 interface SolanaFeeInfo {

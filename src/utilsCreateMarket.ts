@@ -19,11 +19,6 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * step 1: make instructions
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 export async function createMarket(input: TestTxInputInfo) {
   // -------- step 1: make instructions --------
   const createMarketInstruments = await MarketV2.makeCreateMarketInstructionSimple({
@@ -36,7 +31,7 @@ export async function createMarket(input: TestTxInputInfo) {
     dexProgramId: PROGRAMIDS.OPENBOOK_MARKET,
     makeTxVersion,
   })
-  
+
   return { txids: await buildAndSendTx(createMarketInstruments.innerTransactions) }
 }
 

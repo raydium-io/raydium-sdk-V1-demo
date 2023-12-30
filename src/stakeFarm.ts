@@ -30,13 +30,6 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * pre-action: fetch target farm json info
- *
- * step 1: create instructions by SDK function
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 async function stakeFarm(input: TestTxInputInfo) {
   // -------- pre-action: fetch target farm json info --------
   const farmPools: ApiFarmInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.farmInfo)).json()

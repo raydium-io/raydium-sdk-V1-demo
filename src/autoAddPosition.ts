@@ -8,7 +8,6 @@ import {
   ClmmPoolPersonalPosition,
   ComputeAmountOutAmmLayout,
   ComputeAmountOutRouteLayout,
-  ENDPOINT,
   fetchMultipleMintInfos,
   getPdaPersonalPositionAddress,
   LiquidityMath,
@@ -33,9 +32,10 @@ import {
   connection,
   makeTxVersion,
   PROGRAMIDS,
-  RAYDIUM_MAINNET_API,
   wallet
 } from '../config';
+import { formatAmmKeysToApi } from './formatAmmKeys';
+import { formatClmmKeys } from './formatClmmKeys';
 import {
   buildAndSendTx,
   getATAAddress,
@@ -60,7 +60,7 @@ async function autoAddPosition() {
   const positionPooId = positionAccountData.poolId
   console.log('position pool id -> ', positionPooId.toString())
 
-  const clmmPools: ApiClmmPoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data
+  const clmmPools: ApiClmmPoolsItem[] = await formatClmmKeys(PROGRAMIDS.CLMM.toString(), true)
 
   const clmmPool = clmmPools.find(i => i.id === positionPooId.toString())
   if (clmmPool === undefined) throw Error('not found pool info from api')
@@ -88,7 +88,7 @@ async function autoAddPosition() {
   const clmmList = Object.values(
     await Clmm.fetchMultiplePoolInfos({ connection, poolKeys: clmmPools, chainTime: new Date().getTime() / 1000 })
   ).map((i) => i.state)
-  const sPool: ApiPoolInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json()
+  const sPool: ApiPoolInfo = await formatAmmKeysToApi(PROGRAMIDS.AmmV4.toString(), true)
 
   await autoAddPositionFunc({
     poolInfo: clmmInfo,

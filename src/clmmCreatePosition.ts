@@ -2,24 +2,22 @@ import Decimal from 'decimal.js';
 
 import {
   Clmm,
-  ApiClmmPoolsItem,
-  ENDPOINT,
-  fetchMultipleMintInfos,
+  fetchMultipleMintInfos
 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
+import BN from 'bn.js';
 import {
   connection,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatClmmKeysById } from './formatClmmKeysById';
+import { _d } from './getOutOfRangePositionOutAmount';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
 } from './util';
-import BN from 'bn.js';
-import { _d } from './getOutOfRangePositionOutAmount';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -33,21 +31,10 @@ type TestTxInputInfo = {
   slippage: number
 }
 
-/**
- * pre-action: fetch basic Clmm info
- *
- * step 1: Clmm info and Clmm position
- * step 2: get tickUpper and tickLower
- * step 3: get liquidity
- * step 4: create instructions by SDK function
- * step 5: compose instructions to several transactions
- * step 6: send transactions
- */
 async function clmmCreatePosition({ targetPool, inputTokenAmount, inputTokenMint, walletTokenAccounts, wallet, startPrice, endPrice, slippage }: TestTxInputInfo) {
   if (startPrice.gte(endPrice)) throw Error('price input error')
   // -------- pre-action: fetch basic info --------
-  const clmmPools = (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools).then((res) => res.json())).data
-  const clmmPool = clmmPools.find((pool: ApiClmmPoolsItem) => pool.id === targetPool)
+  const clmmPool = await formatClmmKeysById(targetPool)
 
   // -------- step 1: Clmm info and Clmm position --------
   const { [clmmPool.id]: { state: poolInfo } } = await Clmm.fetchMultiplePoolInfos({
@@ -106,7 +93,7 @@ async function clmmCreatePosition({ targetPool, inputTokenAmount, inputTokenMint
     amountMaxB: amountSlippageB.amount,
   })
   console.log('create position mint -> ', makeOpenPositionInstruction.address.nftMint.toString())
-  
+
   return { txids: await buildAndSendTx(makeOpenPositionInstruction.innerTransactions) }
 }
 

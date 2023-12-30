@@ -2,28 +2,27 @@ import assert from 'assert';
 
 import {
   CurrencyAmount,
-  ENDPOINT,
   jsonInfo2PoolKeys,
   Liquidity,
   LiquidityPoolKeys,
   Percent,
   Token,
-  TokenAmount,
+  TokenAmount
 } from '@raydium-io/raydium-sdk';
 import { Keypair } from '@solana/web3.js';
 
+import Decimal from 'decimal.js';
 import {
   connection,
   DEFAULT_TOKEN,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatAmmKeysById } from './formatAmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
 } from './util';
-import Decimal from 'decimal.js';
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
 type TestTxInputInfo = {
@@ -36,24 +35,10 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- *
- * pre-action: fetch basic AmmV2 info
- *
- * step 1: compute (max) another amount
- * step 2: create instructions by SDK function
- * step 3: compose instructions to several transactions
- * step 4: send transactions
- */
 async function ammAddLiquidity(
   input: TestTxInputInfo
 ): Promise<{ txids: string[]; anotherAmount: TokenAmount | CurrencyAmount }> {
-  // -------- pre-action: fetch basic info --------
-  const ammV2PoolData = await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo).then((res) => res.json())
-  assert(ammV2PoolData, 'fetch failed')
-  const targetPoolInfo = [...ammV2PoolData.official, ...ammV2PoolData.unOfficial].find(
-    (poolInfo) => poolInfo.id === input.targetPool
-  )
+  const targetPoolInfo = await formatAmmKeysById(input.targetPool)
   assert(targetPoolInfo, 'cannot find the target pool')
 
   // -------- step 1: compute another amount --------
@@ -68,7 +53,7 @@ async function ammAddLiquidity(
   })
 
   console.log('will add liquidity info', {
-    liquidity: liquidity.toString(), 
+    liquidity: liquidity.toString(),
     liquidityD: new Decimal(liquidity.toString()).div(10 ** extraPoolInfo.lpDecimals),
   })
 

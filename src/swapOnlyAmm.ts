@@ -13,11 +13,10 @@ import { Keypair } from '@solana/web3.js';
 import {
   connection,
   DEFAULT_TOKEN,
-  ENDPOINT,
   makeTxVersion,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatAmmKeysById } from './formatAmmKeysById';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -33,17 +32,9 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * pre-action: get pool info
- * step 1: coumpute amount out
- * step 2: create instructions by SDK function
- * step 3: compose instructions to several transactions
- * step 4: send transactions
- */
 async function swapOnlyAmm(input: TestTxInputInfo) {
   // -------- pre-action: get pool info --------
-  const ammPool = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
-  const targetPoolInfo = [...ammPool.official, ...ammPool.unOfficial].find((info) => info.id === input.targetPool)
+  const targetPoolInfo = await formatAmmKeysById(input.targetPool)
   assert(targetPoolInfo, 'cannot find the target pool')
   const poolKeys = jsonInfo2PoolKeys(targetPoolInfo) as LiquidityPoolKeys
 

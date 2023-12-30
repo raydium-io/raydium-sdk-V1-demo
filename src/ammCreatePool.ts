@@ -62,12 +62,6 @@ type TestTxInputInfo = LiquidityPairTargetInfo &
     wallet: Keypair
   }
 
-/**
- *
- * step 1: create instructions by SDK function
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] }> {
   // -------- step 1: make instructions --------
   const initPoolInstructionResponse = await Liquidity.makeCreatePoolV4InstructionV2Simple({

@@ -1,16 +1,15 @@
 import {
-  AmmConfigLayout,
   ApiClmmConfigItem,
   ApiClmmPoolsItem,
-  ApiClmmPoolsItemStatistics,
-  PoolInfoLayout,
+  PoolInfoLayout
 } from '@raydium-io/raydium-sdk';
 import {
-  AccountInfo,
-  PublicKey,
+  PublicKey
 } from '@solana/web3.js';
 
 import { connection } from '../config';
+import { formatConfigInfo } from './formatClmmConfigs';
+import { getApiClmmPoolsItemStatisticsDefault } from './formatClmmKeys';
 
 async function getMintProgram(mint: PublicKey) {
   const account = await connection.getAccountInfo(mint)
@@ -22,35 +21,8 @@ async function getConfigInfo(configId: PublicKey): Promise<ApiClmmConfigItem> {
   if (account === null) throw Error(' get id info error ')
   return formatConfigInfo(configId, account)
 }
-function formatConfigInfo(id: PublicKey, account: AccountInfo<Buffer>) {
-  const info = AmmConfigLayout.decode(account.data)
 
-  return {
-    id: id.toBase58(),
-    index: info.index,
-    protocolFeeRate: info.protocolFeeRate,
-    tradeFeeRate: info.tradeFeeRate,
-    tickSpacing: info.tickSpacing,
-    fundFeeRate: info.fundFeeRate,
-    fundOwner: info.fundOwner.toString(),
-    description: '',
-  }
-}
-function getApiClmmPoolsItemStatistics(): ApiClmmPoolsItemStatistics {
-  return {
-    volume: 0,
-    volumeFee: 0,
-    feeA: 0,
-    feeB: 0,
-    feeApr: 0,
-    rewardApr: { A: 0, B: 0, C: 0 },
-    apr: 0,
-    priceMin: 0,
-    priceMax: 0,
-  }
-}
-
-export async function formatClmmKeysFromId(id: string): Promise<ApiClmmPoolsItem> {
+export async function formatClmmKeysById(id: string): Promise<ApiClmmPoolsItem> {
   const account = await connection.getAccountInfo(new PublicKey(id))
   if (account === null) throw Error(' get id info error ')
   const info = PoolInfoLayout.decode(account.data)
@@ -75,9 +47,9 @@ export async function formatClmmKeysFromId(id: string): Promise<ApiClmmPoolsItem
         }))
     ),
     tvl: 0,
-    day: getApiClmmPoolsItemStatistics(),
-    week: getApiClmmPoolsItemStatistics(),
-    month: getApiClmmPoolsItemStatistics(),
+    day: getApiClmmPoolsItemStatisticsDefault(),
+    week: getApiClmmPoolsItemStatisticsDefault(),
+    month: getApiClmmPoolsItemStatisticsDefault(),
     lookupTableAccount: PublicKey.default.toBase58(),
   }
 }

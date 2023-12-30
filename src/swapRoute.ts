@@ -1,17 +1,16 @@
 import BN from 'bn.js';
 
 import {
-  Clmm,
   ApiClmmPoolsItem,
   ApiPoolInfo,
+  Clmm,
   Currency,
   CurrencyAmount,
-  ENDPOINT,
   fetchMultipleMintInfos,
   Percent,
   Token,
   TokenAmount,
-  TradeV2,
+  TradeV2
 } from '@raydium-io/raydium-sdk';
 import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import {
@@ -24,9 +23,10 @@ import {
   DEFAULT_TOKEN,
   makeTxVersion,
   PROGRAMIDS,
-  RAYDIUM_MAINNET_API,
-  wallet,
+  wallet
 } from '../config';
+import { formatAmmKeysToApi } from './formatAmmKeys';
+import { formatClmmKeys } from './formatClmmKeys';
 import {
   buildAndSendTx,
   getWalletTokenAccount,
@@ -47,23 +47,14 @@ type TestTxInputInfo = {
   }
 }
 
-/**
- * pre-action: fetch Clmm pools info and ammV2 pools info
- * step 1: get all route
- * step 2: fetch tick array and pool info
- * step 3: calculation result of all route
- * step 4: create instructions by SDK function
- * step 5: compose instructions to several transactions
- * step 6: send transactions
- */
 async function routeSwap(input: TestTxInputInfo) {
   // -------- pre-action: fetch Clmm pools info and ammV2 pools info --------
-  const clmmPools: ApiClmmPoolsItem[] = (await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.clmmPools)).json()).data // If the clmm pool is not required for routing, then this variable can be configured as undefined
+  const clmmPools: ApiClmmPoolsItem[] = await formatClmmKeys(PROGRAMIDS.CLMM.toString()) // If the clmm pool is not required for routing, then this variable can be configured as undefined
   const clmmList = Object.values(
     await Clmm.fetchMultiplePoolInfos({ connection, poolKeys: clmmPools, chainTime: new Date().getTime() / 1000 })
   ).map((i) => i.state)
 
-  const sPool: ApiPoolInfo = await (await fetch(ENDPOINT + RAYDIUM_MAINNET_API.poolInfo)).json() // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
+  const sPool: ApiPoolInfo = await formatAmmKeysToApi(PROGRAMIDS.AmmV4.toString(), true) // If the Liquidity pool is not required for routing, then this variable can be configured as undefined
 
   // -------- step 1: get all route --------
   const getRoute = TradeV2.getAllRoute({

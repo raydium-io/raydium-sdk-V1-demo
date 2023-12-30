@@ -16,14 +16,6 @@ type TestTxInputInfo = {
   wallet: Keypair
 }
 
-/**
- * utils1216 is for compensation
- *
- * pre-action: fetch compensation info list
- * step 1: create instructions by SDK function
- * step 2: compose instructions to several transactions
- * step 3: send transactions
- */
 export async function utils1216(input: TestTxInputInfo) {
   // -------- pre-action: fetch compensation info list --------
   const infoList = await Utils1216.getAllInfo({
