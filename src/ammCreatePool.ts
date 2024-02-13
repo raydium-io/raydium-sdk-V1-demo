@@ -37,7 +37,7 @@ function calcMarketStartPrice(input: CalcStartPrice) {
 type LiquidityPairTargetInfo = {
   baseToken: Token
   quoteToken: Token
-  targetMargetId: PublicKey
+  targetMarketId: PublicKey
 }
 
 function getMarketAssociatedPoolKeys(input: LiquidityPairTargetInfo) {
@@ -48,7 +48,7 @@ function getMarketAssociatedPoolKeys(input: LiquidityPairTargetInfo) {
     quoteMint: input.quoteToken.mint,
     baseDecimals: input.baseToken.decimals,
     quoteDecimals: input.quoteToken.decimals,
-    marketId: input.targetMargetId,
+    marketId: input.targetMarketId,
     programId: PROGRAMIDS.AmmV4,
     marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
   })
@@ -68,7 +68,7 @@ async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] 
     connection,
     programId: PROGRAMIDS.AmmV4,
     marketInfo: {
-      marketId: input.targetMargetId,
+      marketId: input.targetMarketId,
       programId: PROGRAMIDS.OPENBOOK_MARKET,
     },
     baseMintInfo: input.baseToken,
@@ -94,7 +94,7 @@ async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] 
 async function howToUse() {
   const baseToken = DEFAULT_TOKEN.USDC // USDC
   const quoteToken = DEFAULT_TOKEN.RAY // RAY
-  const targetMargetId = Keypair.generate().publicKey
+  const targetMarketId = Keypair.generate().publicKey
   const addBaseAmount = new BN(10000) // 10000 / 10 ** 6,
   const addQuoteAmount = new BN(10000) // 10000 / 10 ** 6,
   const startTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // start from 7 days later
@@ -107,7 +107,7 @@ async function howToUse() {
   const associatedPoolKeys = getMarketAssociatedPoolKeys({
     baseToken,
     quoteToken,
-    targetMargetId,
+    targetMarketId,
   })
 
   ammCreatePool({
@@ -116,7 +116,7 @@ async function howToUse() {
     addQuoteAmount,
     baseToken,
     quoteToken,
-    targetMargetId,
+    targetMarketId,
     wallet,
     walletTokenAccounts,
   }).then(({ txids }) => {
