@@ -69,7 +69,7 @@ async function swapOnlyAmm(input: TestTxInputInfo) {
 async function howToUse() {
   const inputToken = DEFAULT_TOKEN.USDC // USDC
   const outputToken = DEFAULT_TOKEN.RAY // RAY
-  const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // USDC-RAY pool
+  const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // don't use this pool, it's fake
   const inputTokenAmount = new TokenAmount(inputToken, 10000)
   const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
