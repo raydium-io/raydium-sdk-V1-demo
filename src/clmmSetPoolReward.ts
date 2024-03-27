@@ -59,7 +59,7 @@ async function clmmSetPoolReward(input: TestTxInputInfo) {
 }
 
 async function howToUse() {
-  const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
+  const targetPool = 'pool id' // USDC-RAY pool
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
   const rewardInfos = [
     {

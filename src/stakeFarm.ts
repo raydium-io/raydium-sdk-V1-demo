@@ -65,7 +65,7 @@ async function stakeFarm(input: TestTxInputInfo) {
 }
 
 async function howToUse() {
-  const targetFarm = 'CHYrUBX2RKX8iBg7gYTkccoGNBzP44LdaazMHCLcdEgS' // RAY-USDC farm
+  const targetFarm = 'pool id' // RAY-USDC farm
   const lpToken = DEFAULT_TOKEN['RAY_USDC-LP']
   const inputTokenAmount = new TokenAmount(lpToken, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

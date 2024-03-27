@@ -52,8 +52,9 @@ async function callback(data: any, programId: string) {
   if (info.transaction.meta.err !== undefined) return undefined
 
   const formatData: {
-    slot: number, txid: string, poolInfos: ApiPoolInfoV4[]
+    updateTime: number, slot: number, txid: string, poolInfos: ApiPoolInfoV4[]
   } = {
+    updateTime: new Date().getTime(),
     slot: info.slot,
     txid: base58.encode(info.transaction.signature),
     poolInfos: []

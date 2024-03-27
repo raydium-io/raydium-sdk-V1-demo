@@ -67,7 +67,7 @@ async function clmmCreatePool(input: TestTxInputInfo) {
 async function howToUse() {
   const baseToken = DEFAULT_TOKEN.USDC // USDC
   const quoteToken = DEFAULT_TOKEN.RAY // RAY
-  const clmmConfigId = 'E64NGkDLLCdQ2yFNPcavaKptrEgmiQaNykUuLC1Qgwyp'
+  const clmmConfigId = 'pool id'
   const startPoolPrice = new Decimal(1)
   const startTime = new BN(Math.floor(new Date().getTime() / 1000))
 

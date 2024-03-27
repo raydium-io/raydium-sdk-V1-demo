@@ -98,7 +98,7 @@ async function clmmCreatePosition({ targetPool, inputTokenAmount, inputTokenMint
 }
 
 async function howToUse() {
-  const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // RAY-USDC pool
+  const targetPool = 'pool id' // RAY-USDC pool
   const inputTokenAmount = new Decimal(1)
   const inputTokenMint: 'mintA' | 'mintB' = 'mintA'
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

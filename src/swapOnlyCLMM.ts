@@ -89,7 +89,7 @@ async function swapOnlyCLMM(input: TestTxInputInfo) {
 async function howToUse() {
   const inputToken = DEFAULT_TOKEN.USDC // USDC
   const outputToken = DEFAULT_TOKEN.RAY // RAY
-  const targetPool = '61R1ndXxvsWXXkWSyNkCxnzwd3zUNB8Q2ibmkiLPC8ht' // USDC-RAY pool
+  const targetPool = 'pool id' // USDC-RAY pool
   const inputTokenAmount = new TokenAmount(inputToken, 100)
   const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

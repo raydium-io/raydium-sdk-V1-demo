@@ -78,7 +78,7 @@ async function ammAddLiquidity(
 async function howToUse() {
   const baseToken = DEFAULT_TOKEN.USDC // USDC
   const quoteToken = DEFAULT_TOKEN.RAY // RAY
-  const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
+  const targetPool = 'pool id'
   const inputTokenAmount = new TokenAmount(baseToken, 100)
   const slippage = new Percent(1, 100)
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)

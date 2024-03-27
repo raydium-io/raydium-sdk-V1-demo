@@ -53,7 +53,7 @@ async function ammRemoveLiquidity(input: TestTxInputInfo) {
 async function howToUse() {
   const lpToken = DEFAULT_TOKEN['RAY_USDC-LP'] // LP
   const removeLpTokenAmount = new TokenAmount(lpToken, 100)
-  const targetPool = 'EVzLJhqMtdC1nPmz8rNd6xGfVjDPxpLZgq7XJuNfMZ6' // RAY-USDC pool
+  const targetPool = 'pool id' // RAY-USDC pool
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   ammRemoveLiquidity({
