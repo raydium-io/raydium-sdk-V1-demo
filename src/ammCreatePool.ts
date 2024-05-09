@@ -31,7 +31,7 @@ type CalcStartPrice = {
 }
 
 function calcMarketStartPrice(input: CalcStartPrice) {
-  return input.addBaseAmount.toNumber() / 10 ** 6 / (input.addQuoteAmount.toNumber() / 10 ** 6)
+  return input.addBaseAmount.div(input.addQuoteAmount).div(new BN(1000000)).toNumber();
 }
 
 type LiquidityPairTargetInfo = {
