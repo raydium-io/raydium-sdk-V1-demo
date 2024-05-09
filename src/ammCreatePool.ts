@@ -21,6 +21,7 @@ import {
   buildAndSendTx,
   getWalletTokenAccount,
 } from './util';
+import Decimal from 'decimal.js';
 
 const ZERO = new BN(0)
 type BN = typeof ZERO
@@ -30,28 +31,10 @@ type CalcStartPrice = {
   addQuoteAmount: BN
 }
 
-function calcMarketStartPrice(input: CalcStartPrice) {
-  return input.addBaseAmount.toNumber() / 10 ** 6 / (input.addQuoteAmount.toNumber() / 10 ** 6)
-}
-
 type LiquidityPairTargetInfo = {
   baseToken: Token
   quoteToken: Token
   targetMarketId: PublicKey
-}
-
-function getMarketAssociatedPoolKeys(input: LiquidityPairTargetInfo) {
-  return Liquidity.getAssociatedPoolKeys({
-    version: 4,
-    marketVersion: 3,
-    baseMint: input.baseToken.mint,
-    quoteMint: input.quoteToken.mint,
-    baseDecimals: input.baseToken.decimals,
-    quoteDecimals: input.quoteToken.decimals,
-    marketId: input.targetMarketId,
-    programId: PROGRAMIDS.AmmV4,
-    marketProgramId: MAINNET_PROGRAM_ID.OPENBOOK_MARKET,
-  })
 }
 
 type WalletTokenAccounts = Awaited<ReturnType<typeof getWalletTokenAccount>>
@@ -95,20 +78,13 @@ async function howToUse() {
   const baseToken = DEFAULT_TOKEN.USDC // USDC
   const quoteToken = DEFAULT_TOKEN.RAY // RAY
   const targetMarketId = Keypair.generate().publicKey
-  const addBaseAmount = new BN(10000) // 10000 / 10 ** 6,
-  const addQuoteAmount = new BN(10000) // 10000 / 10 ** 6,
+  const addBaseAmount = new BN(10000)
+  const addQuoteAmount = new BN(10000)
   const startTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // start from 7 days later
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
   /* do something with start price if needed */
-  const startPrice = calcMarketStartPrice({ addBaseAmount, addQuoteAmount })
-
-  /* do something with market associated pool keys if needed */
-  const associatedPoolKeys = getMarketAssociatedPoolKeys({
-    baseToken,
-    quoteToken,
-    targetMarketId,
-  })
+  console.log('pool price', new Decimal(addBaseAmount.toString()).div(new Decimal(10 ** baseToken.decimals)).div(new Decimal(addQuoteAmount.toString()).div(new Decimal(10 ** quoteToken.decimals))).toString())
 
   ammCreatePool({
     startTime,
