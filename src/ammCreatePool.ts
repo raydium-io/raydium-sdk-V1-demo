@@ -2,7 +2,6 @@ import { BN } from 'bn.js';
 
 import {
   Liquidity,
-  MAINNET_PROGRAM_ID,
   Token,
 } from '@raydium-io/raydium-sdk';
 import {
@@ -12,16 +11,20 @@ import {
 
 import {
   connection,
-  DEFAULT_TOKEN,
+  FEE_DESTINATION,
   makeTxVersion,
   PROGRAMIDS,
   wallet,
 } from '../config';
 import {
   buildAndSendTx,
+  generateMint,
   getWalletTokenAccount,
+  mintToAta,
 } from './util';
 import Decimal from 'decimal.js';
+import { createMarket } from './utilsCreateMarket2';
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 
 const ZERO = new BN(0)
 type BN = typeof ZERO
@@ -68,18 +71,36 @@ async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] 
     associatedOnly: false,
     checkCreateATAOwner: true,
     makeTxVersion,
-    feeDestinationId: new PublicKey('7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'), // only mainnet use this
+    feeDestinationId: FEE_DESTINATION
   })
 
   return { txids: await buildAndSendTx(initPoolInstructionResponse.innerTransactions) }
 }
 
 async function howToUse() {
-  const baseToken = DEFAULT_TOKEN.USDC // USDC
-  const quoteToken = DEFAULT_TOKEN.RAY // RAY
-  const targetMarketId = Keypair.generate().publicKey
-  const addBaseAmount = new BN(10000)
-  const addQuoteAmount = new BN(10000)
+  const DECIMALS = 9;
+  const MINT_AUTHORITY = Keypair.generate();
+  const baseToken = await generateMint(MINT_AUTHORITY.publicKey, "MY_USDC", DECIMALS);
+  const quoteToken = await generateMint(MINT_AUTHORITY.publicKey, "MY_RAY", DECIMALS);
+  const marketKeyPair = Keypair.generate();
+  const targetMarketId = marketKeyPair.publicKey;
+
+  await createMarket({
+    connection,
+    wallet:  new NodeWallet(wallet),
+    baseMint: baseToken.mint,
+    quoteMint: quoteToken.mint,
+    baseLotSize: 1,
+    quoteLotSize: 1,
+    dexProgram: PROGRAMIDS.OPENBOOK_MARKET,
+    market: marketKeyPair,
+  });
+  
+  const addBaseAmount = new BN(10000 * Math.pow(10, DECIMALS))
+  const addQuoteAmount = new BN(10000 * Math.pow(10, DECIMALS))
+  await mintToAta(MINT_AUTHORITY, baseToken.mint, wallet.publicKey, addBaseAmount.toNumber());
+  await mintToAta(MINT_AUTHORITY, quoteToken.mint, wallet.publicKey, addBaseAmount.toNumber());
+
   const startTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // start from 7 days later
   const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
@@ -100,3 +121,5 @@ async function howToUse() {
     console.log('txids', txids)
   })
 }
+
+howToUse();

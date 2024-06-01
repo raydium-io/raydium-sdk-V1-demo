@@ -3,6 +3,7 @@ import {
   findProgramAddress,
   InnerSimpleV0Transaction,
   SPL_ACCOUNT_LAYOUT,
+  Token,
   TOKEN_PROGRAM_ID,
   TokenAccount,
 } from '@raydium-io/raydium-sdk';
@@ -22,6 +23,7 @@ import {
   makeTxVersion,
   wallet,
 } from '../config';
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token';
 
 export async function sendTx(
   connection: Connection,
@@ -75,4 +77,37 @@ export function getATAAddress(programId: PublicKey, owner: PublicKey, mint: Publ
 export async function sleepTime(ms: number) {
   console.log((new Date()).toLocaleString(), 'sleepTime', ms)
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export const generateMint = async (mintAuthority: PublicKey, label: string, decimals: number) : Promise<Token> => {
+  const mint = await createMint(connection,
+    wallet,
+    mintAuthority,
+    null,
+    decimals);
+  return new Token(TOKEN_PROGRAM_ID, mint, 6, label, label);
+}
+
+export const mintToAta = async (mintAuthority: Keypair, mint: PublicKey, to: PublicKey, amount: number) => {
+  const ata = await getOrCreateAssociatedTokenAccount(
+    connection,
+    wallet,
+    mint,
+    to,
+    false,
+    "processed",
+    undefined
+  );
+
+  await mintTo(connection,
+    wallet,
+    mint,
+    ata.address,
+    mintAuthority,
+    amount,
+    [],
+    { skipPreflight: true }
+  );
+
+  return ata;
 }
